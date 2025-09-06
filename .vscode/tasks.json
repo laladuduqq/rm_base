@@ -1,0 +1,72 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build(debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build/Debug",
+                "-j", "8"           
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "download dap(elf)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "daplink.cfg",
+                "-c",
+                "program ./build/Debug/base.elf verify reset exit"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "JFlash Program",
+            "type": "shell",
+            "command": "JFlash",
+            "args": [
+                "-openprj", 
+                "${workspaceFolder}/base.jflash",
+                "-open",                
+                "${workspaceFolder}/build/Debug/base.elf",
+                "-auto",
+                "-exit"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "download st-link(elf)",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "st-link.cfg",
+                "-c",
+                "program ./build/Debug/base.elf verify reset exit"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+    ]
+}

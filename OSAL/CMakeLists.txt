@@ -4,6 +4,7 @@ set(name OSAL)
 add_library(${name} STATIC
     osal_thread.c
     osal_sem.c
+    osal_mutex.c
 )
 
 # 设置包含目录

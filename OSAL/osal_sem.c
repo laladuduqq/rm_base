@@ -22,8 +22,15 @@ osal_status_t osal_sem_wait(osal_sem_t *sem, osal_tick_t timeout)
         return OSAL_INVALID_PARAM;
     }
     UINT result;
-    
-    result = tx_semaphore_get((TX_SEMAPHORE*)sem, timeout);
+
+    if (timeout == OSAL_WAIT_FOREVER)
+    {
+        result = tx_semaphore_get((TX_SEMAPHORE*)sem, TX_WAIT_FOREVER);
+    }
+    else
+    {
+        result = tx_semaphore_get((TX_SEMAPHORE*)sem, timeout);
+    }
     
     if (result == TX_SUCCESS) {
         return OSAL_SUCCESS;

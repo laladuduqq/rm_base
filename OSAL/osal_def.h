@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:58:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-06 22:54:44
+ * @LastEditTime: 2025-09-06 23:08:15
  * @FilePath: /rm_base/OSAL/osal_def.h
  * @Description: 
  */
@@ -69,6 +69,17 @@ typedef struct {
 } osal_sem_t;
 #endif
 
+/* 互斥量相关类型定义 */
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
+typedef TX_MUTEX osal_mutex_t;
+#elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
+// FreeRTOS下，osal_mutex_t需要包含StaticSemaphore_t结构体
+typedef struct {
+    SemaphoreHandle_t mutex_handle;
+    StaticSemaphore_t mutex_buffer;
+} osal_mutex_t;
+#endif
+
 /* 时间类型定义 */
 #if (OSAL_RTOS_TYPE == OSAL_THREADX)
 typedef ULONG osal_tick_t;
@@ -120,13 +131,60 @@ osal_status_t osal_thread_stop(osal_thread_t *thread);
  * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
  */
 osal_status_t osal_thread_delete(osal_thread_t *thread);
-
-
 // 信号量部分
+/**
+ * @description: 创建信号量
+ * @param {osal_sem_t*} sem, 信号量句柄指针
+ * @param {const char*} name, 信号量名称
+ * @param {unsigned int} initial_count, 信号量初始计数值
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
 osal_status_t osal_sem_create(osal_sem_t *sem, const char *name, unsigned int initial_count);
+/**
+ * @description: 等待(获取)信号量
+ * @param {osal_sem_t*} sem, 信号量句柄指针
+ * @param {osal_tick_t} timeout, 超时时间，OSAL_WAIT_FOREVER表示永久等待，OSAL_NO_WAIT表示不等待
+ * @return {osal_status_t} OSAL_SUCCESS - 成功获取信号量, OSAL_TIMEOUT - 超时, OSAL_ERROR - 错误, OSAL_INVALID_PARAM - 参数无效
+ */
 osal_status_t osal_sem_wait(osal_sem_t *sem, osal_tick_t timeout);
+/**
+ * @description: 释放(发送)信号量
+ * @param {osal_sem_t*} sem, 信号量句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功释放信号量, OSAL_ERROR - 错误, OSAL_INVALID_PARAM - 参数无效
+ */
 osal_status_t osal_sem_post(osal_sem_t *sem);
+/**
+ * @description: 删除信号量
+ * @param {osal_sem_t*} sem, 信号量句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功删除信号量, OSAL_ERROR - 错误, OSAL_INVALID_PARAM - 参数无效
+ */
 osal_status_t osal_sem_delete(osal_sem_t *sem); 
+/**
+ * @description: 创建互斥量
+ * @param {osal_mutex_t*} mutex, 互斥量句柄指针
+ * @param {const char*} name, 互斥量名称
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_mutex_create(osal_mutex_t *mutex, const char *name);
+/**
+ * @description: 获取互斥量
+ * @param {osal_mutex_t*} mutex, 互斥量句柄指针
+ * @param {osal_tick_t} timeout, 超时时间
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败, OSAL_TIMEOUT - 超时
+ */
+osal_status_t osal_mutex_lock(osal_mutex_t *mutex, osal_tick_t timeout);
+/**
+ * @description: 释放互斥量
+ * @param {osal_mutex_t*} mutex, 互斥量句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_mutex_unlock(osal_mutex_t *mutex);
+/**
+ * @description: 删除互斥量
+ * @param {osal_mutex_t*} mutex, 互斥量句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_mutex_delete(osal_mutex_t *mutex);
 // 通用延时函数
 /**
  * @description: 毫秒延时

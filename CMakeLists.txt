@@ -37,6 +37,25 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
+# 自动查找所有子目录中的 CMakeLists.txt (除了 cmake 目录)
+file(GLOB_RECURSE CMAKE_FILES 
+    LIST_DIRECTORIES false 
+    RELATIVE ${CMAKE_SOURCE_DIR}
+    "*/CMakeLists.txt"
+)
+
+# 遍历找到的 CMakeLists.txt 文件
+foreach(CMAKE_FILE ${CMAKE_FILES})
+    # 获取 CMakeLists.txt 所在的目录路径
+    get_filename_component(DIR ${CMAKE_FILE} DIRECTORY)
+    
+    # 排除 cmake 目录及其子目录
+    if(NOT DIR MATCHES "^cmake.*")
+        # 添加子目录
+        add_subdirectory(${DIR})
+    endif()
+endforeach()
+
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths

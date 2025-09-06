@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:58:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-06 15:03:58
+ * @LastEditTime: 2025-09-06 22:54:44
  * @FilePath: /rm_base/OSAL/osal_def.h
  * @Description: 
  */
@@ -14,9 +14,8 @@ extern "C" {
 #endif
 
 /* OSAL支持的RTOS类型 */
-#define OSAL_BARE_METAL    (0)
-#define OSAL_THREADX       (2)
-#define OSAL_FREERTOS      (3)
+#define OSAL_THREADX       (1)
+#define OSAL_FREERTOS      (2)
 
 /* 配置当前使用的RTOS类型，默认为裸机模式 */
 #ifndef OSAL_RTOS_TYPE
@@ -29,11 +28,10 @@ extern "C" {
     #elif OSAL_RTOS_TYPE == OSAL_FREERTOS
     #include "FreeRTOS.h"
     #include "task.h"
-    #elif OSAL_RTOS_TYPE != OSAL_BARE_METAL
-    #error "OSAL_RTOS_TYPE is not defined correctly"
-    #endif
+    #include "semphr.h"
     #else
     #error "OSAL_RTOS_TYPE is not defined"
+    #endif
 #endif
 
 /* OSAL通用数据类型定义 */
@@ -46,11 +44,7 @@ typedef enum {
 } osal_status_t;
 
 /* 线程相关类型定义 */
-#if (OSAL_RTOS_TYPE == OSAL_BARE_METAL)
-typedef void (*osal_thread_entry_t)(void *argument);
-typedef void * osal_thread_t;
-typedef unsigned int osal_thread_priority_t;
-#elif (OSAL_RTOS_TYPE == OSAL_THREADX)
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
 typedef TX_THREAD osal_thread_t;
 typedef UINT osal_thread_priority_t;
 typedef VOID (*osal_thread_entry_t)(ULONG);
@@ -64,10 +58,19 @@ typedef UBaseType_t osal_thread_priority_t;
 typedef void (*osal_thread_entry_t)(void *);
 #endif
 
+/* 信号量相关类型定义 */
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
+typedef TX_SEMAPHORE osal_sem_t;
+#elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
+// FreeRTOS下，osal_sem_t需要包含StaticSemaphore_t结构体
+typedef struct {
+    SemaphoreHandle_t sem_handle;
+    StaticSemaphore_t sem_buffer;
+} osal_sem_t;
+#endif
+
 /* 时间类型定义 */
-#if (OSAL_RTOS_TYPE == OSAL_BARE_METAL)
-typedef unsigned int osal_tick_t;
-#elif (OSAL_RTOS_TYPE == OSAL_THREADX)
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
 typedef ULONG osal_tick_t;
 #elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
 typedef TickType_t osal_tick_t;
@@ -79,6 +82,8 @@ typedef TickType_t osal_tick_t;
 #define OSAL_NO_WAIT             (0)
 
 /* 函数声明 */
+
+// 线程部分
 /**
  * @description: 创建线程
  * @param {osal_thread_t*} thread, 线程句柄指针
@@ -116,6 +121,12 @@ osal_status_t osal_thread_stop(osal_thread_t *thread);
  */
 osal_status_t osal_thread_delete(osal_thread_t *thread);
 
+
+// 信号量部分
+osal_status_t osal_sem_create(osal_sem_t *sem, const char *name, unsigned int initial_count);
+osal_status_t osal_sem_wait(osal_sem_t *sem, osal_tick_t timeout);
+osal_status_t osal_sem_post(osal_sem_t *sem);
+osal_status_t osal_sem_delete(osal_sem_t *sem); 
 // 通用延时函数
 /**
  * @description: 毫秒延时

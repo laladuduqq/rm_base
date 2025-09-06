@@ -2,44 +2,13 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:56:03
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-06 15:02:40
- * @FilePath: /rm_base_freertosv1/OSAL/osal_thread.c
+ * @LastEditTime: 2025-09-06 22:56:17
+ * @FilePath: /rm_base/OSAL/osal_thread.c
  * @Description: 
  */
 #include "osal_def.h"
 
-#if (OSAL_RTOS_TYPE == OSAL_BARE_METAL)
-
-/* 裸机模式下的线程实现 */
-osal_status_t osal_thread_create(osal_thread_t *thread, 
-                                 const char *name,
-                                 osal_thread_entry_t entry,
-                                 void *argument,
-                                 void *stack_pointer,
-                                 unsigned int stack_size,
-                                 osal_thread_priority_t priority)
-{
-    /* 裸机模式不支持多线程，直接返回错误 */
-    return OSAL_ERROR;
-}
-
-osal_status_t osal_thread_start(osal_thread_t *thread)
-{
-    /* 裸机模式不支持线程启动 */
-    return OSAL_ERROR;
-}
-
-osal_status_t osal_thread_stop(osal_thread_t *thread)
-{
-    return OSAL_ERROR;
-}
-
-osal_status_t osal_thread_delete(osal_thread_t *thread)
-{
-    return OSAL_ERROR;
-}
-
-#elif (OSAL_RTOS_TYPE == OSAL_THREADX)
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
 
 #include "tx_api.h"
 

@@ -2,12 +2,13 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 12:41:40
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 18:54:59
+ * @LastEditTime: 2025-09-07 21:20:54
  * @FilePath: /rm_base/BSP/UART/bsp_uart.c
  * @Description: 
  */
 #include "bsp_uart.h"
 #include "osal_def.h"
+#include "stm32f4xx_hal_uart.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,19 +23,12 @@ static void Start_Rx(UART_Device *device) {
         return;
     }
     uint8_t next_buf = !device->rx_active_buf;
-    uint16_t max_len = device->rx_buf_size;
     HAL_StatusTypeDef status = HAL_OK;
-    switch(device->rx_mode){
-        case UART_MODE_BLOCKING:
-            break;
-        case UART_MODE_IT:
-            status = HAL_UARTEx_ReceiveToIdle_IT(device->huart, (uint8_t*)&device->rx_buf[next_buf], 
-                device->expected_rx_len ? device->expected_rx_len : max_len);
-            break;
-        case UART_MODE_DMA:
-            status = HAL_UARTEx_ReceiveToIdle_DMA(device->huart, (uint8_t*)&device->rx_buf[next_buf], 
-                device->expected_rx_len ? device->expected_rx_len : max_len);
-            break;
+    // 根据接收模式启动相应的接收
+    if (device->rx_mode == UART_MODE_IT) {
+        status = HAL_UARTEx_ReceiveToIdle_IT(device->huart, (uint8_t*)&device->rx_buf[next_buf], device->expected_rx_len);
+    } else if (device->rx_mode == UART_MODE_DMA) {
+        status = HAL_UARTEx_ReceiveToIdle_DMA(device->huart, (uint8_t*)&device->rx_buf[next_buf], device->expected_rx_len);
     }
     // 只有在启动成功时才切换缓冲区
     if (status == HAL_OK && device->rx_mode != UART_MODE_BLOCKING) {
@@ -44,12 +38,12 @@ static void Start_Rx(UART_Device *device) {
 
 static void Process_Rx_Complete(UART_Device *device, uint16_t Size) {
     // 计算实际接收长度
-    if(device->expected_rx_len == 0){
-        if(device->rx_mode == UART_MODE_DMA){
-            // 获取单缓冲区大小
-            Size = device->rx_buf_size - __HAL_DMA_GET_COUNTER(device->huart->hdmarx);
-            // 长度校验
-            if(Size > device->rx_buf_size){Size = device->rx_buf_size;}
+    if(device->expected_rx_len == 0 && device->rx_mode == UART_MODE_DMA){
+        // 获取单缓冲区大小
+        Size = device->rx_buf_size - __HAL_DMA_GET_COUNTER(device->huart->hdmarx);
+        // 长度校验
+        if(Size > device->rx_buf_size){ 
+            Size = device->rx_buf_size;
         }
     }
     device->real_rx_len = Size;
@@ -148,28 +142,40 @@ int BSP_UART_Send(UART_Device *inst, uint8_t *data, uint16_t len)
 
     return -1;
 }
-int BSP_UART_Read(UART_Device *inst, uint8_t *data)
+uint8_t* BSP_UART_Read(UART_Device *device)
 {
-    if (inst == NULL || data == NULL) {
-        return -1;
+    if (device == NULL) {
+        return NULL;
     }
-    // 对于阻塞模式，直接接收数据
-    if (inst->rx_mode == UART_MODE_BLOCKING) {
-        uint16_t max_len = inst->expected_rx_len ? inst->expected_rx_len : inst->rx_buf_size;
-        HAL_StatusTypeDef status = HAL_UART_Receive(inst->huart, data, max_len, HAL_MAX_DELAY);
+    
+    // 对于阻塞模式，使用第一个缓冲区进行接收
+    if (device->rx_mode == UART_MODE_BLOCKING) {
+        HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle(device->huart, (uint8_t*)device->rx_buf[0], 
+                                                          device->expected_rx_len ,&device->real_rx_len,
+                                                          HAL_MAX_DELAY);
         if (status == HAL_OK) {
-            return max_len;
+            return device->rx_buf[0];
         }
-        return -1;
-    }
-    else
-    {
-        // 使用memcpy复制非活动缓冲区的数据
-        memcpy(data, inst->rx_buf[!inst->rx_active_buf], inst->real_rx_len);
-        return inst->real_rx_len;
+        return NULL;
+    } else {
+        // 对于中断/DMA模式，等待接收完成事件
+        unsigned int actual_flags;
+        osal_status_t status = osal_event_wait(&device->uart_event, UART_RX_DONE_EVENT,
+                                              OSAL_EVENT_WAIT_FLAG_OR, OSAL_WAIT_FOREVER, &actual_flags);
+        if (status == OSAL_SUCCESS) {
+            // 清除事件标志
+            osal_event_clear(&device->uart_event, UART_RX_DONE_EVENT);
+            // 返回非活动缓冲区的数据指针
+            return device->rx_buf[!device->rx_active_buf];
+        }
+        return NULL;
     }
 }
 void BSP_UART_Deinit(UART_Device *device) {
+    if (device == NULL) {
+        return;
+    }
+    
     for(int i=0; i<UART_MAX_INSTANCE_NUM; i++){
         if(&registered_uart[i] == device){
             HAL_UART_Abort(device->huart);

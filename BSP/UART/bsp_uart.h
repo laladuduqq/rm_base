@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 12:41:34
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 18:54:39
+ * @LastEditTime: 2025-09-07 21:06:23
  * @FilePath: /rm_base/BSP/UART/bsp_uart.h
  * @Description: 
  */
@@ -77,13 +77,12 @@ UART_Device*  BSP_UART_Device_Init(UART_Device_init_config *config);
  */
 int BSP_UART_Send(UART_Device *inst, uint8_t *data, uint16_t len);
 /**
- * @brief  获取UART接收缓冲区的数据和长度
- * @param  inst: UART_Device指针
- * @param  data: 指向接收数据的指针
- * @note   注意该函数仅适用于阻塞模式，非阻塞模式是复制读取数据
- * @return int： 实际接收的字节数
+ * @description: UART接收函数
+ * @details      从UART设备接收数据
+ * @param        inst：UART_Device指针
+ * @return       uint8_t*：指向接收数据的指针，失败返回NULL
  */
-int BSP_UART_Read(UART_Device *inst, uint8_t *data);
+uint8_t* BSP_UART_Read(UART_Device *device);
 /**
  * @description: UART反初始化函数
  * @details      释放UART设备资源，删除事件标志组和信号量

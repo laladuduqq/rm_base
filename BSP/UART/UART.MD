@@ -74,7 +74,7 @@ int BSP_UART_Send(UART_Device *inst, uint8_t *data, uint16_t len);
 ```
 
 ```c
-int BSP_UART_Read(UART_Device *inst, uint8_t *data);
+uint8_t* BSP_UART_Read(UART_Device *device);
 ```
 
 ```c
@@ -93,7 +93,7 @@ static UART_Device uart_device;
 // 2. 配置初始化参数（阻塞模式）
 UART_Device_init_config config = {
     .huart = &huart1,
-    .rx_buf = uart_rx_buf,
+    .rx_buf = (uint8_t (*)[2])uart_rx_buf,
     .rx_buf_size = 256,
     .expected_rx_len = 0,  // 不定长接收
     .rx_mode = UART_MODE_BLOCKING,
@@ -112,9 +112,9 @@ uint8_t data[] = "Hello UART!\r\n";
 BSP_UART_Send(device, data, sizeof(data) - 1);
 
 // 5. 接收数据（阻塞方式）
-uint8_t rx_buffer[256];
-int len = BSP_UART_Read(device, rx_buffer);
-if (len > 0) {
+uint8_t* rx_data = BSP_UART_Read(device);
+if (rx_data != NULL) {
+    int len = device->real_rx_len;
     // 处理接收到的数据
 }
 
@@ -132,9 +132,9 @@ static UART_Device uart_device;
 // 2. 配置初始化参数（中断模式）
 UART_Device_init_config config = {
     .huart = &huart1,
-    .rx_buf = uart_rx_buf,
+    .rx_buf = (uint8_t (*)[2])uart_rx_buf,
     .rx_buf_size = 256,
-    .expected_rx_len = 0,  // 不定长接收
+    .expected_rx_len = 32,  // 固定长度接收
     .rx_mode = UART_MODE_IT,
     .tx_mode = UART_MODE_IT
 };
@@ -150,20 +150,12 @@ if (device == NULL) {
 uint8_t data[] = "Hello UART!\r\n";
 BSP_UART_Send(device, data, sizeof(data) - 1);
 
-// 5. 接收数据（事件驱动方式）
-unsigned int actual_flags;
-osal_status_t status = osal_event_wait(&device->uart_event, UART_RX_DONE_EVENT,
-                                      OSAL_EVENT_WAIT_FLAG_OR, 5000, &actual_flags);
-if (status == OSAL_SUCCESS && (actual_flags & UART_RX_DONE_EVENT)) {
-    // 直接访问非活动缓冲区获取数据
-    uint8_t* rx_data = device->rx_buf[!device->rx_active_buf];
-    int rx_len = device->real_rx_len;
-    
+// 5. 接收数据（函数内部等待事件）
+uint8_t* rx_data = BSP_UART_Read(device);
+if (rx_data != NULL) {
+    int len = device->real_rx_len;
     // 处理接收到的数据
-    process_data(rx_data, rx_len);
-    
-    // 清除事件标志
-    osal_event_clear(&device->uart_event, UART_RX_DONE_EVENT);
+    process_data(rx_data, len);
 }
 
 // 6. 反初始化
@@ -182,16 +174,15 @@ BSP_UART_Deinit(device);
 
 - 启动后台接收，使用双缓冲区机制
 - 接收完成时通过 UART_RX_DONE_EVENT 事件通知
-- 用户可以直接访问非活动缓冲区获取数据
-- BSP_UART_Read 函数主要用于阻塞模式，中断/DMA模式下也可使用但会复制数据
+- BSP_UART_Read 函数等待事件并返回非活动缓冲区指针
 
 ## 注意事项
 
 1. **缓冲区管理**：接收缓冲区需要由用户在外部定义并提供给驱动，中断和DMA模式使用双缓冲区机制提高效率。
 
-2. **事件处理**：中断和DMA模式下，接收完成通过 UART_RX_DONE_EVENT 事件通知，用户应等待事件后再处理数据。
+2. **阻塞模式**：在阻塞模式下，BSP_UART_Read 函数直接执行轮询接收并返回数据指针。
 
-3. **阻塞模式**：在阻塞模式下，双缓冲区机制不生效，BSP_UART_Read 函数直接执行轮询接收。
+3. **中断/DMA模式**：在中断/DMA模式下，BSP_UART_Read 函数会等待接收完成事件，然后返回非活动缓冲区指针。
 
 4. **内存管理**：驱动使用静态内存管理，避免动态内存分配，提高系统稳定性。
 
@@ -202,7 +193,15 @@ BSP_UART_Deinit(device);
 驱动通过 UART_ERR_EVENT 事件通知错误发生，用户可以通过等待该事件来处理错误情况：
 
 ```c
-
+unsigned int actual_flags;
+osal_status_t status = osal_event_wait(&device->uart_event, 
+                                      UART_ERR_EVENT,
+                                      OSAL_EVENT_WAIT_FLAG_OR, 
+                                      1000, 
+                                      &actual_flags);
+if (status == OSAL_SUCCESS && (actual_flags & UART_ERR_EVENT)) {
+    // 处理错误
+    // 清除错误事件
+    osal_event_clear(&device->uart_event, UART_ERR_EVENT);
+}
 ```
-
-

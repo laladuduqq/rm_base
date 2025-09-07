@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:58:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-06 23:08:15
+ * @LastEditTime: 2025-09-07 07:16:01
  * @FilePath: /rm_base/OSAL/osal_def.h
  * @Description: 
  */
@@ -29,6 +29,7 @@ extern "C" {
     #include "FreeRTOS.h"
     #include "task.h"
     #include "semphr.h"
+    #include "event_groups.h"
     #else
     #error "OSAL_RTOS_TYPE is not defined"
     #endif
@@ -79,6 +80,21 @@ typedef struct {
     StaticSemaphore_t mutex_buffer;
 } osal_mutex_t;
 #endif
+
+/* 事件相关类型定义 */
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
+typedef TX_EVENT_FLAGS_GROUP osal_event_t;
+#elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
+// FreeRTOS下，osal_event_t需要包含StaticEventGroup_t结构体
+typedef struct {
+    EventGroupHandle_t handle;
+    StaticEventGroup_t buffer;
+} osal_event_t;
+#endif
+/* 事件等待选项 */
+#define OSAL_EVENT_WAIT_FLAG_AND            0x01U  /* 等待所有指定的事件标志都被设置 */
+#define OSAL_EVENT_WAIT_FLAG_OR             0x02U  /* 等待任何指定的事件标志被设置 */
+#define OSAL_EVENT_WAIT_FLAG_CLEAR          0x04U  /* 在等待完成后清除所等待的事件标志 */
 
 /* 时间类型定义 */
 #if (OSAL_RTOS_TYPE == OSAL_THREADX)
@@ -185,6 +201,50 @@ osal_status_t osal_mutex_unlock(osal_mutex_t *mutex);
  * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
  */
 osal_status_t osal_mutex_delete(osal_mutex_t *mutex);
+// 事件部分
+/**
+ * @description: 创建事件组
+ * @param {osal_event_t*} event, 事件组句柄指针
+ * @param {const char*} name, 事件组名称
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_event_create(osal_event_t *event, const char *name);
+/**
+ * @description: 设置事件标志
+ * @param {osal_event_t*} event, 事件组句柄指针
+ * @param {unsigned int} flags, 要设置的事件标志
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_event_set(osal_event_t *event, unsigned int flags);
+/**
+ * @description: 等待事件标志
+ * @param {osal_event_t*} event, 事件组句柄指针
+ * @param {unsigned int} requested_flags, 要等待的事件标志
+ * @param {unsigned int} options, 等待选项
+  *        OSAL_EVENT_WAIT_FLAG_AND - 等待所有指定的事件标志都被设置
+  *        OSAL_EVENT_WAIT_FLAG_OR - 等待任何指定的事件标志被设置
+  *        OSAL_EVENT_WAIT_FLAG_CLEAR - 在等待完成后清除所等待的事件标志
+  *        可以组合使用，例如：OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR
+ * @param {osal_tick_t} timeout, 超时时间
+ * @param {unsigned int*} actual_flags, 实际返回的事件标志
+ * @return {osal_status_t} OSAL_SUCCESS - 获取成功, OSAL_TIMEOUT - 超时, OSAL_ERROR - 获取失败, OSAL_INVALID_PARAM - 参数无效
+ */
+osal_status_t osal_event_wait(osal_event_t *event, unsigned int requested_flags, 
+                              unsigned int options, osal_tick_t timeout, unsigned int *actual_flags);
+/**
+ * @description: 清除事件标志
+ * @param {osal_event_t*} event, 事件组句柄指针
+ * @param {unsigned int} flags, 要清除的事件标志
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_event_clear(osal_event_t *event, unsigned int flags);
+/**
+ * @description: 删除事件组
+ * @param {osal_event_t*} event, 事件组句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_event_delete(osal_event_t *event);
+
 // 通用延时函数
 /**
  * @description: 毫秒延时

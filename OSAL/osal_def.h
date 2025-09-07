@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:58:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 10:42:07
+ * @LastEditTime: 2025-09-07 11:32:01
  * @FilePath: /rm_base/OSAL/osal_def.h
  * @Description: 
  */
@@ -116,6 +116,16 @@ typedef enum {
     OSAL_TIMER_MODE_ONCE    = 0,  /* 单次触发模式 */
     OSAL_TIMER_MODE_PERIODIC = 1  /* 周期触发模式 */
 } osal_timer_mode_t;
+
+/* 队列类型定义 */
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
+typedef TX_QUEUE osal_queue_t;
+#elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
+typedef struct {
+    QueueHandle_t handle;
+    StaticQueue_t buffer;
+} osal_queue_t;
+#endif
 
 /* 时间类型定义 */
 #if (OSAL_RTOS_TYPE == OSAL_THREADX)
@@ -318,6 +328,48 @@ osal_status_t osal_timer_delete(osal_timer_t *timer);
  * @return {uint8_t} 1 - 正在运行, 0 - 未运行
  */
 uint8_t osal_timer_is_active(osal_timer_t *timer);
+
+// 队列部分
+/**
+ * @description: 创建队列
+ * @param {osal_queue_t*} queue - 队列句柄指针
+ * @param {const char*} name - 队列名称
+ * @param {unsigned int} msg_size - 消息大小(字节)
+ * @param {unsigned int} msg_count - 消息数量
+ * @param {void*} msg_buffer - 消息缓冲区内存
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_queue_create(osal_queue_t *queue, 
+                                const char *name,
+                                unsigned int msg_size,
+                                unsigned int msg_count,
+                                void *msg_buffer);
+
+/**
+ * @description: 向队列发送消息
+ * @param {osal_queue_t*} queue - 队列句柄指针
+ * @param {void*} msg_ptr - 消息指针
+ * @param {osal_tick_t} timeout - 超时时间
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败, OSAL_TIMEOUT - 超时
+ */
+osal_status_t osal_queue_send(osal_queue_t *queue, void *msg_ptr, osal_tick_t timeout);
+
+/**
+ * @description: 从队列接收消息
+ * @param {osal_queue_t*} queue - 队列句柄指针
+ * @param {void*} msg_ptr - 消息存储指针
+ * @param {osal_tick_t} timeout - 超时时间
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败, OSAL_TIMEOUT - 超时
+ */
+osal_status_t osal_queue_recv(osal_queue_t *queue, void *msg_ptr, osal_tick_t timeout);
+
+/**
+ * @description: 删除队列
+ * @param {osal_queue_t*} queue - 队列句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_queue_delete(osal_queue_t *queue);
+
 
 // 通用延时函数
 /**

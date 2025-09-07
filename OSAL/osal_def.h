@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:58:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 11:32:01
+ * @LastEditTime: 2025-09-07 13:04:33
  * @FilePath: /rm_base/OSAL/osal_def.h
  * @Description: 
  */
@@ -132,6 +132,13 @@ typedef struct {
 typedef ULONG osal_tick_t;
 #elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
 typedef TickType_t osal_tick_t;
+#endif
+
+/* 中断临界区控制定义 */
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
+typedef UINT osal_critical_state_t;
+#elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
+typedef BaseType_t osal_critical_state_t;
 #endif
 
 
@@ -369,6 +376,21 @@ osal_status_t osal_queue_recv(osal_queue_t *queue, void *msg_ptr, osal_tick_t ti
  * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
  */
 osal_status_t osal_queue_delete(osal_queue_t *queue);
+
+// 中断管理函数
+/**
+ * @description: 进入临界区（关中断）
+ * @param {osal_critical_state_t*} crit 用于保存中断状态的指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_INVALID_PARAM - 参数错误
+ */
+osal_status_t osal_enter_critical(osal_critical_state_t *crit);
+
+/**
+ * @description: 退出临界区（恢复中断）
+ * @param {osal_critical_state_t*} crit 保存中断状态的指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_INVALID_PARAM - 参数错误
+ */
+osal_status_t osal_exit_critical(osal_critical_state_t *crit);
 
 
 // 通用延时函数

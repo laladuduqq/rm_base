@@ -106,24 +106,24 @@ void example_thread_usage(void) {
                                               thread_stack, 
                                               sizeof(thread_stack), 
                                               15);
-    
+
     if (status != OSAL_SUCCESS) {
         // 处理错误
         return;
     }
-    
+
     // 启动线程
     status = osal_thread_start(&my_thread);
     if (status != OSAL_SUCCESS) {
         // 处理错误
         return;
     }
-    
+
     // 线程现在开始运行
-    
+
     // 停止线程
     osal_thread_stop(&my_thread);
-    
+
     // 删除线程
     osal_thread_delete(&my_thread);
 }
@@ -177,13 +177,13 @@ void example_semaphore_usage(void) {
         // 处理错误
         return;
     }
-    
+
     // 获取信号量，等待时间为1000个tick
     status = osal_sem_wait(&my_sem, 1000);
     if (status == OSAL_SUCCESS) {
         // 成功获取信号量
         // 执行需要同步保护的代码
-        
+
         // 释放信号量
         osal_sem_post(&my_sem);
     } else if (status == OSAL_TIMEOUT) {
@@ -191,7 +191,7 @@ void example_semaphore_usage(void) {
     } else {
         // 其他错误
     }
-    
+
     // 删除信号量
     osal_sem_delete(&my_sem);
 }
@@ -199,7 +199,7 @@ void example_semaphore_usage(void) {
 // 在中断服务例程中释放信号量的示例
 void some_interrupt_handler(void) {
     // 处理中断
-    
+
     // 释放信号量
     osal_sem_post(&my_sem);
 }
@@ -256,17 +256,17 @@ void example_mutex_usage(void) {
         // 处理错误
         return;
     }
-    
+
     // 获取互斥量
     status = osal_mutex_lock(&my_mutex, OSAL_WAIT_FOREVER);
     if (status == OSAL_SUCCESS) {
         // 成功获取互斥量，可以安全访问共享资源
         shared_resource++;
-        
+
         // 释放互斥量
         osal_mutex_unlock(&my_mutex);
     }
-    
+
     // 删除互斥量
     osal_mutex_delete(&my_mutex);
 }
@@ -333,10 +333,10 @@ void example_event_usage(void) {
         // 处理错误
         return;
     }
-    
+
     // 设置事件标志
     osal_event_set(&my_event, EVENT_FLAG_TASK_1_READY);
-    
+
     // 等待单个事件标志
     unsigned int actual_flags;
     status = osal_event_wait(&my_event, 
@@ -344,32 +344,32 @@ void example_event_usage(void) {
                              OSAL_EVENT_WAIT_FLAG_OR, 
                              OSAL_WAIT_FOREVER, 
                              &actual_flags);
-    
+
     if (status == OSAL_SUCCESS) {
         // 成功等待到事件
         if (actual_flags & EVENT_FLAG_DATA_READY) {
             // 处理数据
         }
     }
-    
+
     // 等待多个事件标志（AND逻辑）
     status = osal_event_wait(&my_event, 
                              EVENT_FLAG_TASK_1_READY | EVENT_FLAG_TASK_2_READY,
                              OSAL_EVENT_WAIT_FLAG_AND,
                              1000,
                              &actual_flags);
-    
+
     if (status == OSAL_SUCCESS) {
         // 两个事件标志都已设置
     }
-    
+
     // 等待事件并自动清除
     status = osal_event_wait(&my_event,
                              EVENT_FLAG_DATA_READY,
                              OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR,
                              OSAL_WAIT_FOREVER,
                              &actual_flags);
-    
+
     // 删除事件组
     osal_event_delete(&my_event);
 }
@@ -377,7 +377,7 @@ void example_event_usage(void) {
 // 在中断中设置事件标志
 void some_interrupt_handler(void) {
     // 处理中断
-    
+
     // 设置事件标志
     osal_event_set(&my_event, EVENT_FLAG_DATA_READY);
 }
@@ -451,8 +451,8 @@ static osal_timer_t my_timer;
 // 定时器回调函数
 void timer_callback(osal_timer_t *timer) {
     // 定时器到期处理
-   
-    
+
+
     // 可以设置事件标志、发送信号量等
 }
 
@@ -464,30 +464,30 @@ void example_timer_usage(void) {
                                              NULL,
                                              1000,
                                              OSAL_TIMER_MODE_PERIODIC);
-    
+
     if (status != OSAL_SUCCESS) {
         // 处理错误
         return;
     }
-    
+
     // 启动定时器
     status = osal_timer_start(&my_timer);
     if (status != OSAL_SUCCESS) {
         // 处理错误
         return;
     }
-    
+
     // 检查定时器是否正在运行
     if (osal_timer_is_active(&my_timer)) {
         // 定时器正在运行
     }
-    
+
     // 运行一段时间后修改定时器周期
     osal_timer_change_period(&my_timer, 2000); // 修改为2000ms
-    
+
     // 停止定时器
     osal_timer_stop(&my_timer);
-    
+
     // 删除定时器
     osal_timer_delete(&my_timer);
 }
@@ -548,12 +548,12 @@ void example_queue_usage(void) {
                                              sizeof(uint32_t),
                                              10,
                                              queue_buffer);
-    
+
     if (status != OSAL_SUCCESS) {
         // 处理错误
         return;
     }
-    
+
     // 发送消息到队列
     uint32_t data_to_send = 12345;
     status = osal_queue_send(&my_queue, &data_to_send, OSAL_WAIT_FOREVER);
@@ -561,7 +561,7 @@ void example_queue_usage(void) {
         // 处理发送失败
         return;
     }
-    
+
     // 从队列接收消息
     uint32_t received_data;
     status = osal_queue_recv(&my_queue, &received_data, OSAL_WAIT_FOREVER);
@@ -569,7 +569,7 @@ void example_queue_usage(void) {
         // 成功接收到消息
         // received_data 现在包含 12345
     }
-    
+
     // 删除队列
     osal_queue_delete(&my_queue);
 }
@@ -578,7 +578,7 @@ void example_queue_usage(void) {
 void some_interrupt_handler(void) {
     static uint32_t isr_data = 0;
     isr_data++;
-    
+
     // 在中断中发送消息，不等待
     osal_queue_send(&my_queue, &isr_data, OSAL_NO_WAIT);
 }
@@ -594,4 +594,63 @@ void osal_delay_ms(unsigned int ms);
 
 ```c
 void osal_delay_us(unsigned int us);
+```
+
+## 中断管理
+
+### 数据类型
+
+```c
+// ThreadX
+typedef UINT osal_critical_state_t;
+
+// FreeRTOS
+typedef BaseType_t osal_critical_state_t;
+```
+
+### API接口
+
+```c
+osal_status_t osal_enter_critical(osal_critical_state_t *crit);
+```
+
+```c
+osal_status_t osal_exit_critical(osal_critical_state_t *crit);
+```
+
+### 使用示例
+
+```c
+#include "osal_def.h"
+
+// 全局变量需要在中断和任务中访问
+volatile uint32_t shared_counter = 0;
+
+// 在任务中访问共享变量
+void task_function(void *argument) {
+    osal_critical_state_t crit;
+    
+    // 进入临界区
+    osal_enter_critical(&crit);
+    
+    // 访问共享资源
+    shared_counter++;
+    
+    // 退出临界区
+    osal_exit_critical(&crit);
+}
+
+// 在中断服务例程中访问共享变量
+void interrupt_handler(void) {
+    osal_critical_state_t crit;
+    
+    // 进入临界区
+    osal_enter_critical(&crit);
+    
+    // 访问共享资源
+    shared_counter++;
+    
+    // 退出临界区
+    osal_exit_critical(&crit);
+}
 ```

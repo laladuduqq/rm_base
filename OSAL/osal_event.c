@@ -2,8 +2,8 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:56:03
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 08:56:20
- * @FilePath: /rm_base/OSAL/osal_event.c
+ * @LastEditTime: 2025-09-07 10:22:30
+ * @FilePath: /rm_base_freertosv1/OSAL/osal_event.c
  * @Description: OSAL事件管理接口实现
  */
 
@@ -162,20 +162,33 @@ osal_status_t osal_event_set(osal_event_t *event, unsigned int flags)
 }
 
 osal_status_t osal_event_wait(osal_event_t *event, unsigned int requested_flags, 
-                              osal_tick_t timeout, unsigned int *actual_flags)
+                              unsigned int options, osal_tick_t timeout, unsigned int *actual_flags)
 {
     EventBits_t bits;
+    BaseType_t clear_on_exit = pdTRUE;
+    BaseType_t wait_for_all_bits = pdTRUE;
     
     if (event == NULL || event->handle == NULL) {
         return OSAL_INVALID_PARAM;
     }
     
+    // 根据options参数设置获取选项
+    // FreeRTOS默认使用AND逻辑(pdTRUE)，如果需要OR逻辑则设置为pdFALSE
+    if (options & 0x01) {  // 假设最低位为OR标志
+        wait_for_all_bits = pdFALSE;
+    }
+    
+    // 如果需要不清除标志，则设置为pdFALSE
+    if (options & 0x02) {  // 假设第二位为不清除标志
+        clear_on_exit = pdFALSE;
+    }
+    
     if (timeout == OSAL_WAIT_FOREVER) {
         bits = xEventGroupWaitBits(event->handle, (EventBits_t)requested_flags, 
-                                   pdTRUE, pdTRUE, portMAX_DELAY);
+                                   clear_on_exit, wait_for_all_bits, portMAX_DELAY);
     } else {
         bits = xEventGroupWaitBits(event->handle, (EventBits_t)requested_flags,
-                                   pdTRUE, pdTRUE, timeout);
+                                   clear_on_exit, wait_for_all_bits, timeout);
     }
     
     if (actual_flags != NULL) {
@@ -183,7 +196,8 @@ osal_status_t osal_event_wait(osal_event_t *event, unsigned int requested_flags,
     }
     
     // 检查是否获取到了所需的事件标志
-    if ((bits & requested_flags) == requested_flags) {
+    if ((wait_for_all_bits == pdTRUE && (bits & requested_flags) == requested_flags) ||
+        (wait_for_all_bits == pdFALSE && (bits & requested_flags) != 0)) {
         return OSAL_SUCCESS;
     } else if (timeout == 0 && bits == 0) {
         return OSAL_TIMEOUT;
@@ -221,6 +235,5 @@ osal_status_t osal_event_delete(osal_event_t *event)
     
     return OSAL_SUCCESS;
 }
-
 
 #endif

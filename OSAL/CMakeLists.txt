@@ -6,6 +6,7 @@ add_library(${name} STATIC
     osal_sem.c
     osal_mutex.c
     osal_event.c
+    osal_softtimer.c
 )
 
 # 设置包含目录

@@ -2,13 +2,14 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:58:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 07:16:01
+ * @LastEditTime: 2025-09-07 10:42:07
  * @FilePath: /rm_base/OSAL/osal_def.h
  * @Description: 
  */
 #ifndef __OSAL_DEF_H__
 #define __OSAL_DEF_H__
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -95,6 +96,26 @@ typedef struct {
 #define OSAL_EVENT_WAIT_FLAG_AND            0x01U  /* 等待所有指定的事件标志都被设置 */
 #define OSAL_EVENT_WAIT_FLAG_OR             0x02U  /* 等待任何指定的事件标志被设置 */
 #define OSAL_EVENT_WAIT_FLAG_CLEAR          0x04U  /* 在等待完成后清除所等待的事件标志 */
+
+
+/* 定时器类型定义 */
+#if (OSAL_RTOS_TYPE == OSAL_THREADX)
+typedef TX_TIMER osal_timer_t;
+typedef VOID (*osal_timer_callback_t)(ULONG);
+#elif (OSAL_RTOS_TYPE == OSAL_FREERTOS)
+typedef struct {
+    TimerHandle_t handle;
+    StaticTimer_t buffer;
+} osal_timer_t;
+// 严格按照FreeRTOS标准定义回调函数类型
+typedef void (*osal_timer_callback_t)(TimerHandle_t xTimer);
+#endif
+
+/* 定时器模式 */
+typedef enum {
+    OSAL_TIMER_MODE_ONCE    = 0,  /* 单次触发模式 */
+    OSAL_TIMER_MODE_PERIODIC = 1  /* 周期触发模式 */
+} osal_timer_mode_t;
 
 /* 时间类型定义 */
 #if (OSAL_RTOS_TYPE == OSAL_THREADX)
@@ -244,6 +265,59 @@ osal_status_t osal_event_clear(osal_event_t *event, unsigned int flags);
  * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
  */
 osal_status_t osal_event_delete(osal_event_t *event);
+// 定时器部分
+/**
+ * @description: 创建定时器
+ * @param {osal_timer_t*} timer - 定时器句柄指针
+ * @param {const char*} name - 定时器名称
+ * @param {osal_timer_callback_t} callback - 定时器回调函数
+ * @param {void*} argument - 传递给回调函数的参数
+ * @param {unsigned int} timeout_ms - 定时器超时时间(毫秒)
+ * @param {osal_timer_mode_t} mode - 定时器模式
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_timer_create(osal_timer_t *timer, 
+                                const char *name,
+                                osal_timer_callback_t callback,
+                                void *argument,
+                                unsigned int timeout_ms,
+                                osal_timer_mode_t mode);
+
+/**
+ * @description: 启动定时器
+ * @param {osal_timer_t*} timer - 定时器句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_timer_start(osal_timer_t *timer);
+
+/**
+ * @description: 停止定时器
+ * @param {osal_timer_t*} timer - 定时器句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_timer_stop(osal_timer_t *timer);
+
+/**
+ * @description: 修改定时器超时时间
+ * @param {osal_timer_t*} timer - 定时器句柄指针
+ * @param {unsigned int} timeout_ms - 新的超时时间(毫秒)
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_timer_change_period(osal_timer_t *timer, unsigned int timeout_ms);
+
+/**
+ * @description: 删除定时器
+ * @param {osal_timer_t*} timer - 定时器句柄指针
+ * @return {osal_status_t} OSAL_SUCCESS - 成功, OSAL_ERROR - 失败
+ */
+osal_status_t osal_timer_delete(osal_timer_t *timer);
+
+/**
+ * @description: 检查定时器是否正在运行
+ * @param {osal_timer_t*} timer - 定时器句柄指针
+ * @return {uint8_t} 1 - 正在运行, 0 - 未运行
+ */
+uint8_t osal_timer_is_active(osal_timer_t *timer);
 
 // 通用延时函数
 /**

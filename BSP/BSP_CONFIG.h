@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 13:55:47
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-08 10:45:43
+ * @LastEditTime: 2025-09-08 11:48:06
  * @FilePath: /rm_base/BSP/BSP_CONFIG.h
  * @Description: bsp配置文件
  */
@@ -22,5 +22,8 @@
 /* I2C 配置 */
 #define I2C_BUS_NUM 2                  // 总线数量
 #define MAX_DEVICES_PER_I2C_BUS 4      // 每条总线最大设备数
+
+/* GPIO 配置 */
+#define GPIO_EXTI_DEVICE_NUM 16        // 最大GPIO中断回调设备数
 
 #endif // _BSP_CONFIG_H_

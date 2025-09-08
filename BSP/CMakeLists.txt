@@ -6,6 +6,7 @@ add_library(${name} STATIC
     SPI/bsp_spi.c
     PWM/bsp_pwm.c
     I2C/bsp_i2c.c
+    GPIO/bsp_gpio.c
 )
 
 # 设置包含目录
@@ -16,6 +17,7 @@ target_include_directories(${name}
     ${CMAKE_CURRENT_SOURCE_DIR}/SPI
     ${CMAKE_CURRENT_SOURCE_DIR}/PWM
     ${CMAKE_CURRENT_SOURCE_DIR}/I2C
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPIO
 )
 
 # 链接必要的库

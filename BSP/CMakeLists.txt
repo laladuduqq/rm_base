@@ -3,6 +3,7 @@ set(name BSP)
 
 add_library(${name} STATIC
     UART/bsp_uart.c
+    SPI/bsp_spi.c
 )
 
 # 设置包含目录
@@ -10,6 +11,7 @@ target_include_directories(${name}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/UART
+    ${CMAKE_CURRENT_SOURCE_DIR}/SPI
 
 )
 

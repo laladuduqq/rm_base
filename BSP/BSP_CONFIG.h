@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 13:55:47
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 14:16:42
+ * @LastEditTime: 2025-09-07 22:07:40
  * @FilePath: /rm_base/BSP/BSP_CONFIG.h
  * @Description: bsp配置文件
  */
@@ -11,5 +11,9 @@
 
 /* UART 配置 */
 #define UART_MAX_INSTANCE_NUM 3        //可用串口数量
+
+/* SPI 配置 */
+#define SPI_BUS_NUM 2                  // 总线数量
+#define MAX_DEVICES_PER_BUS 4          // 每条总线最大设备数
 
 #endif // _BSP_CONFIG_H_

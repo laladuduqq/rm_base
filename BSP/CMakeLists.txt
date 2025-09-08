@@ -4,6 +4,7 @@ set(name BSP)
 add_library(${name} STATIC
     UART/bsp_uart.c
     SPI/bsp_spi.c
+    PWM/bsp_pwm.c
 )
 
 # 设置包含目录
@@ -12,7 +13,7 @@ target_include_directories(${name}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/UART
     ${CMAKE_CURRENT_SOURCE_DIR}/SPI
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/PWM
 )
 
 # 链接必要的库

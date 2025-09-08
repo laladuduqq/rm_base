@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 13:55:47
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-08 08:33:56
+ * @LastEditTime: 2025-09-08 10:45:43
  * @FilePath: /rm_base/BSP/BSP_CONFIG.h
  * @Description: bsp配置文件
  */
@@ -18,5 +18,9 @@
 
 /* PWM 配置 */
 #define MAX_PWM_DEVICES 10             // 最大PWM设备数
+
+/* I2C 配置 */
+#define I2C_BUS_NUM 2                  // 总线数量
+#define MAX_DEVICES_PER_I2C_BUS 4      // 每条总线最大设备数
 
 #endif // _BSP_CONFIG_H_

@@ -9,6 +9,7 @@ add_library(${name} STATIC
     GPIO/bsp_gpio.c
     DWT/bsp_dwt.c
     FLASH/bsp_flash.c
+    ADC/bsp_adc.c
 )
 
 # 设置包含目录
@@ -22,6 +23,7 @@ target_include_directories(${name}
     ${CMAKE_CURRENT_SOURCE_DIR}/GPIO
     ${CMAKE_CURRENT_SOURCE_DIR}/DWT
     ${CMAKE_CURRENT_SOURCE_DIR}/FLASH
+    ${CMAKE_CURRENT_SOURCE_DIR}/ADC
     
 )
 

@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 13:55:47
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-08 11:48:06
+ * @LastEditTime: 2025-09-09 13:44:11
  * @FilePath: /rm_base/BSP/BSP_CONFIG.h
  * @Description: bsp配置文件
  */
@@ -25,5 +25,8 @@
 
 /* GPIO 配置 */
 #define GPIO_EXTI_DEVICE_NUM 16        // 最大GPIO中断回调设备数
+
+/* ADC 配置 */
+#define ADC_DEVICE_NUM 4               // 最大ADC设备数
 
 #endif // _BSP_CONFIG_H_

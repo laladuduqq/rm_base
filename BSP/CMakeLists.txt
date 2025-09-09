@@ -10,6 +10,7 @@ add_library(${name} STATIC
     DWT/bsp_dwt.c
     FLASH/bsp_flash.c
     ADC/bsp_adc.c
+    CAN/bsp_can.c
 )
 
 # 设置包含目录
@@ -24,6 +25,7 @@ target_include_directories(${name}
     ${CMAKE_CURRENT_SOURCE_DIR}/DWT
     ${CMAKE_CURRENT_SOURCE_DIR}/FLASH
     ${CMAKE_CURRENT_SOURCE_DIR}/ADC
+    ${CMAKE_CURRENT_SOURCE_DIR}/CAN
     
 )
 

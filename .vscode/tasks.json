@@ -27,7 +27,7 @@
                 "-f",
                 "daplink.cfg",
                 "-c",
-                "program ./build/Debug/base.elf verify reset exit"
+                "program ./build/Debug/rm_base.elf verify reset exit"
             ],
             "problemMatcher": [],
             "group": {
@@ -43,7 +43,7 @@
                 "-openprj", 
                 "${workspaceFolder}/base.jflash",
                 "-open",                
-                "${workspaceFolder}/build/Debug/base.elf",
+                "${workspaceFolder}/build/Debug/rm_base.elf",
                 "-auto",
                 "-exit"
             ],
@@ -60,7 +60,7 @@
                 "-f",
                 "st-link.cfg",
                 "-c",
-                "program ./build/Debug/base.elf verify reset exit"
+                "program ./build/Debug/rm_base.elf verify reset exit"
             ],
             "problemMatcher": [],
             "group": {

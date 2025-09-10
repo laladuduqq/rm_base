@@ -2,8 +2,8 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-06 09:56:03
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 10:22:30
- * @FilePath: /rm_base_freertosv1/OSAL/osal_event.c
+ * @LastEditTime: 2025-09-10 13:22:56
+ * @FilePath: /rm_base/OSAL/osal_event.c
  * @Description: OSAL事件管理接口实现
  */
 
@@ -43,7 +43,7 @@ osal_status_t osal_event_wait(osal_event_t *event, unsigned int requested_flags,
 {
     UINT result;
     ULONG actual_flags_local;
-    UINT get_option = TX_AND;  /* 默认使用AND逻辑 */
+    UINT get_option = TX_AND_CLEAR;  /* 默认使用AND逻辑并清除 */
     
     if (event == NULL) {
         return OSAL_INVALID_PARAM;
@@ -51,15 +51,15 @@ osal_status_t osal_event_wait(osal_event_t *event, unsigned int requested_flags,
     
     /* 根据options参数设置获取选项 */
     if (options & OSAL_EVENT_WAIT_FLAG_OR) {
-        get_option = TX_OR;
+        get_option = TX_OR_CLEAR;  /* OR逻辑并清除 */
     }
     
-    /* 如果需要清除标志，则添加CLEAR选项 */
-    if (options & OSAL_EVENT_WAIT_FLAG_CLEAR) {
-        if (get_option == TX_AND) {
-            get_option = TX_AND_CLEAR;
+    /* 如果明确指定不清除，则使用不带CLEAR的选项 */
+    if (!(options & OSAL_EVENT_WAIT_FLAG_CLEAR)) {
+        if (get_option == TX_AND_CLEAR) {
+            get_option = TX_AND;
         } else {
-            get_option = TX_OR_CLEAR;
+            get_option = TX_OR;
         }
     }
     
@@ -82,19 +82,13 @@ osal_status_t osal_event_wait(osal_event_t *event, unsigned int requested_flags,
 
 osal_status_t osal_event_clear(osal_event_t *event, unsigned int flags)
 {
-    UINT result;
-    
+    /* 由于threadx不支持单独clear操作，如果需要要在wait中清除标志 */
     if (event == NULL) {
         return OSAL_INVALID_PARAM;
     }
     
-    result = tx_event_flags_set((TX_EVENT_FLAGS_GROUP*)event, (ULONG)flags, TX_AND);
-    
-    if (result == TX_SUCCESS) {
-        return OSAL_SUCCESS;
-    } else {
-        return OSAL_ERROR;
-    }
+    /* 直接返回成功，不执行实际清除操作 */
+    return OSAL_SUCCESS;
 }
 
 osal_status_t osal_event_delete(osal_event_t *event)

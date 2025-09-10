@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 12:41:40
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 21:20:54
+ * @LastEditTime: 2025-09-10 13:41:57
  * @FilePath: /rm_base/BSP/UART/bsp_uart.c
  * @Description: 
  */
@@ -26,9 +26,11 @@ static void Start_Rx(UART_Device *device) {
     HAL_StatusTypeDef status = HAL_OK;
     // 根据接收模式启动相应的接收
     if (device->rx_mode == UART_MODE_IT) {
-        status = HAL_UARTEx_ReceiveToIdle_IT(device->huart, (uint8_t*)&device->rx_buf[next_buf], device->expected_rx_len);
+        status = HAL_UARTEx_ReceiveToIdle_IT(device->huart, (uint8_t*)&device->rx_buf[next_buf], 
+                                        device->expected_rx_len ? device->expected_rx_len : device->rx_buf_size);
     } else if (device->rx_mode == UART_MODE_DMA) {
-        status = HAL_UARTEx_ReceiveToIdle_DMA(device->huart, (uint8_t*)&device->rx_buf[next_buf], device->expected_rx_len);
+        status = HAL_UARTEx_ReceiveToIdle_DMA(device->huart, (uint8_t*)&device->rx_buf[next_buf], 
+                                        device->expected_rx_len ? device->expected_rx_len : device->rx_buf_size);
     }
     // 只有在启动成功时才切换缓冲区
     if (status == HAL_OK && device->rx_mode != UART_MODE_BLOCKING) {
@@ -105,24 +107,24 @@ UART_Device* BSP_UART_Device_Init(UART_Device_init_config *config){
     Start_Rx(device);
     return device;
 }
-int BSP_UART_Send(UART_Device *inst, uint8_t *data, uint16_t len)
+int BSP_UART_Send(UART_Device *device, uint8_t *data, uint16_t len)
 {
-    if (inst == NULL || data == NULL || len == 0) {
+    if (device == NULL || data == NULL || len == 0) {
         return -1;
     }
 
     HAL_StatusTypeDef hal_status;
 
     // 根据发送模式选择发送方式
-    switch (inst->tx_mode) {
+    switch (device->tx_mode) {
         case UART_MODE_BLOCKING:
-            hal_status = HAL_UART_Transmit(inst->huart, data, len, HAL_MAX_DELAY);
-            return (hal_status == HAL_OK) ? len : -1;
+            hal_status = HAL_UART_Transmit(device->huart, data, len, HAL_MAX_DELAY);
+            break;
         case UART_MODE_IT:
-            hal_status = HAL_UART_Transmit_IT(inst->huart, data, len);
+            hal_status = HAL_UART_Transmit_IT(device->huart, data, len);
             break;
         case UART_MODE_DMA:
-            hal_status = HAL_UART_Transmit_DMA(inst->huart, data, len);
+            hal_status = HAL_UART_Transmit_DMA(device->huart, data, len);
             break;
 
         default:
@@ -130,13 +132,11 @@ int BSP_UART_Send(UART_Device *inst, uint8_t *data, uint16_t len)
     }
 
     // 对于非阻塞模式，等待发送完成事件
-    if (hal_status == HAL_OK) {
+    if (hal_status == HAL_OK && device->tx_mode != UART_MODE_BLOCKING) {
         unsigned int actual_flags;
-        osal_status_t status = osal_event_wait(&inst->uart_event, UART_TX_DONE_EVENT,
-                                              OSAL_EVENT_WAIT_FLAG_OR, OSAL_WAIT_FOREVER, &actual_flags);
-        // 清除事件标志
-        osal_event_clear(&inst->uart_event, UART_TX_DONE_EVENT);
-        
+        osal_status_t status = osal_event_wait(&device->uart_event, UART_TX_DONE_EVENT,
+                                               OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR, 
+                                               OSAL_WAIT_FOREVER, &actual_flags);
         return (status == OSAL_SUCCESS) ? len : -1;
     }
 
@@ -151,8 +151,8 @@ uint8_t* BSP_UART_Read(UART_Device *device)
     // 对于阻塞模式，使用第一个缓冲区进行接收
     if (device->rx_mode == UART_MODE_BLOCKING) {
         HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle(device->huart, (uint8_t*)device->rx_buf[0], 
-                                                          device->expected_rx_len ,&device->real_rx_len,
-                                                          HAL_MAX_DELAY);
+                                                          device->expected_rx_len ? device->expected_rx_len : device->rx_buf_size,
+                                                          &device->real_rx_len,HAL_MAX_DELAY);
         if (status == HAL_OK) {
             return device->rx_buf[0];
         }
@@ -161,10 +161,8 @@ uint8_t* BSP_UART_Read(UART_Device *device)
         // 对于中断/DMA模式，等待接收完成事件
         unsigned int actual_flags;
         osal_status_t status = osal_event_wait(&device->uart_event, UART_RX_DONE_EVENT,
-                                              OSAL_EVENT_WAIT_FLAG_OR, OSAL_WAIT_FOREVER, &actual_flags);
+                                              OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR, OSAL_WAIT_FOREVER, &actual_flags);
         if (status == OSAL_SUCCESS) {
-            // 清除事件标志
-            osal_event_clear(&device->uart_event, UART_RX_DONE_EVENT);
             // 返回非活动缓冲区的数据指针
             return device->rx_buf[!device->rx_active_buf];
         }

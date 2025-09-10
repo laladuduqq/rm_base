@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 12:41:34
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-07 21:06:23
+ * @LastEditTime: 2025-09-10 13:41:03
  * @FilePath: /rm_base/BSP/UART/bsp_uart.h
  * @Description: 
  */
@@ -70,26 +70,26 @@ UART_Device*  BSP_UART_Device_Init(UART_Device_init_config *config);
 /**
  * @description: UART发送函数
  * @details      发送数据到UART设备
- * @param        inst：UART_Device指针
+ * @param        device：UART_Device指针
  * @param        data：要发送的数据指针
  * @param        len：数据长度
  * @return       int：实际发送的字节数
  */
-int BSP_UART_Send(UART_Device *inst, uint8_t *data, uint16_t len);
+int BSP_UART_Send(UART_Device *device, uint8_t *data, uint16_t len);
 /**
  * @description: UART接收函数
  * @details      从UART设备接收数据
- * @param        inst：UART_Device指针
+ * @param        device：UART_Device指针
  * @return       uint8_t*：指向接收数据的指针，失败返回NULL
  */
 uint8_t* BSP_UART_Read(UART_Device *device);
 /**
  * @description: UART反初始化函数
  * @details      释放UART设备资源，删除事件标志组和信号量
- * @param        inst：UART_Device指针
+ * @param        device：UART_Device指针
  * @return {*}
  */
-void BSP_UART_Deinit(UART_Device *inst);
+void BSP_UART_Deinit(UART_Device *device);
 
 
 #endif // _BSP_UART_H_

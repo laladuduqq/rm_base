@@ -22,6 +22,10 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "app_azure_rtos.h"
+#include "osal_def.h"
+#include "shell.h"
+#include <stdint.h>
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,7 +54,9 @@ static UCHAR tx_byte_pool_buffer[TX_APP_MEM_POOL_SIZE];
 static TX_BYTE_POOL tx_app_byte_pool;
 
 /* USER CODE BEGIN PV */
-
+static osal_thread_t robot_init_thread;
+static uint8_t robot_init_stack[1024];
+void robot_init_entry(ULONG input);
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,7 +99,9 @@ VOID tx_application_define(VOID *first_unused_memory)
     }
 
     /* USER CODE BEGIN  App_ThreadX_Init_Success */
-
+    osal_thread_create(&robot_init_thread, "robot_init_thread", robot_init_entry, 
+                      NULL, robot_init_stack,1024,1);
+    osal_thread_start(&robot_init_thread);
     /* USER CODE END  App_ThreadX_Init_Success */
 
   }
@@ -101,5 +109,12 @@ VOID tx_application_define(VOID *first_unused_memory)
 }
 
 /* USER CODE BEGIN  0 */
+void robot_init_entry(ULONG input)
+{
+
+  shell_init();
+
+  osal_thread_delete(&robot_init_thread);
+}
 
 /* USER CODE END  0 */

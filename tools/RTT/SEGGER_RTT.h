@@ -398,6 +398,8 @@ unsigned     SEGGER_RTT_PutCharSkip             (unsigned BufferIndex, char c);
 unsigned     SEGGER_RTT_PutCharSkipNoLock       (unsigned BufferIndex, char c);
 unsigned     SEGGER_RTT_GetAvailWriteSpace      (unsigned BufferIndex);
 unsigned     SEGGER_RTT_GetBytesInBuffer        (unsigned BufferIndex);
+void         RTT_WriteStringSkip                (const char* str);
+int          RTT_WriteDataSkip                  (unsigned BufferIndex, const void* pData, unsigned NumBytes); 
 //
 // Function macro for performance optimization
 //

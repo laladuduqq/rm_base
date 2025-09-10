@@ -64,8 +64,6 @@ Revision: $Rev: 24316 $
 **********************************************************************
 */
 
-#define RTT_USE_ASM (1)
-
 //
 // Take in and set to correct values for Cortex-A systems with CPU cache
 //

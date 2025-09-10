@@ -2085,4 +2085,23 @@ unsigned SEGGER_RTT_GetBytesInBuffer(unsigned BufferIndex) {
   return r;
 }
 
+
+// 使用 SEGGER_RTT_WriteSkipNoLock 发送字符串
+void RTT_WriteStringSkip(const char* str) {
+    if (str != NULL) {
+        SEGGER_RTT_LOCK();
+        SEGGER_RTT_WriteSkipNoLock(0, str, strlen(str));
+        SEGGER_RTT_UNLOCK();
+    }
+}
+
+// 使用 SEGGER_RTT_WriteSkipNoLock 发送数据块
+int RTT_WriteDataSkip(unsigned BufferIndex, const void* pData, unsigned NumBytes) {
+    int result;
+    SEGGER_RTT_LOCK();
+    result = SEGGER_RTT_WriteSkipNoLock(BufferIndex, pData, NumBytes);
+    SEGGER_RTT_UNLOCK();
+    return result;
+}
+
 /*************************** End of file ****************************/

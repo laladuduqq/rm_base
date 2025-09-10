@@ -1,6 +1,8 @@
 # 创建静态库
 set(name tools)
 
+enable_language(C ASM)
+
 add_library(${name} STATIC
     RTT/SEGGER_RTT.c
     RTT/SEGGER_RTT_printf.c

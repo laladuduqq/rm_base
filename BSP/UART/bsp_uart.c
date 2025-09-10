@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 12:41:40
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-10 13:41:57
+ * @LastEditTime: 2025-09-10 21:32:31
  * @FilePath: /rm_base/BSP/UART/bsp_uart.c
  * @Description: 
  */
@@ -96,9 +96,8 @@ UART_Device* BSP_UART_Device_Init(UART_Device_init_config *config){
     device->rx_mode = config->rx_mode;
     device->tx_mode = config->tx_mode;
     // 创建具有唯一标识的事件名称
-    char event_name[16];
-    // 使用UART实例的地址后几位作为标识，确保唯一性
-    snprintf(event_name, sizeof(event_name), "uart_%04X", (unsigned int)((uintptr_t)device->huart & 0xFFFF));
+    static char event_name[16];
+    snprintf(event_name, sizeof(event_name), "uart_event_%d",free_index);
     // 创建事件组
     osal_status_t status = osal_event_create(&device->uart_event, event_name);
     if (status != OSAL_SUCCESS) {return NULL;}

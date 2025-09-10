@@ -25,6 +25,7 @@ static const shell_cmd_t g_shell_cmds[] = {
     {"help", shell_help_cmd, "显示帮助信息 (Show help)"},
     {"clear", shell_clear_cmd, "清屏 (Clear screen)"},
     {"version", shell_version_cmd, "显示版本信息 (Version info)"},
+    {"ps", shell_ps_cmd, "显示系统信息 (Show system info)"},
     {NULL, NULL, NULL} // 结束标记
 };
 
@@ -330,7 +331,7 @@ static const shell_cmd_t* shell_find_cmd(const char *name) {
 
 // 格式化打印函数
 void shell_printf(const char *fmt, ...) {
-    char buffer[256];
+    static char buffer[256];
     va_list args;
     int len;
     
@@ -361,6 +362,10 @@ void shell_printf(const char *fmt, ...) {
 }
 
 void shell_send(const uint8_t *data, uint16_t len) {
+    if (!g_shell_ctx.initialized) {
+        return;
+    }
+    
     if (SHELL_RTT)
     {
         if (len > 0) {

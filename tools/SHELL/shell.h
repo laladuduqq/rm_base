@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-04 12:51:36
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-10 11:02:26
+ * @LastEditTime: 2025-09-10 18:22:06
  * @FilePath: /rm_base/tools/SHELL/shell.h
  * @Description: 
  */
@@ -64,6 +64,6 @@ int shell_register_function(const char* name, shell_cmd_func_t func, const char*
 void shell_help_cmd(int argc, char **argv);
 void shell_clear_cmd(int argc, char **argv);
 void shell_version_cmd(int argc, char **argv);
-
+void shell_ps_cmd(int argc, char **argv);
 
 #endif // _SHELL_H_

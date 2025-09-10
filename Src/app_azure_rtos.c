@@ -107,14 +107,18 @@ VOID tx_application_define(VOID *first_unused_memory)
   }
 
 }
-
+static uint32_t count=0;
 /* USER CODE BEGIN  0 */
 void robot_init_entry(ULONG input)
 {
 
   shell_init();
 
-  osal_thread_delete(&robot_init_thread);
+  while (1)
+  {
+      count++;
+      osal_delay_ms(1000);
+  }
 }
 
 /* USER CODE END  0 */

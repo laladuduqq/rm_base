@@ -8,6 +8,7 @@ add_library(${name} STATIC
     RTT/SEGGER_RTT_printf.c
     RTT/SEGGER_RTT_ASM_ARMv7M.S
     SHELL/shell.c
+    SHELL/shell_ps.c
 )
 
 # 设置包含目录

@@ -22,6 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "app_azure_rtos.h"
+#include "bsp_dwt.h"
 #include "osal_def.h"
 #include "shell.h"
 #include <stdint.h>
@@ -29,7 +30,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#define LOG_TAG "app"
+#include "log.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,17 +109,22 @@ VOID tx_application_define(VOID *first_unused_memory)
   }
 
 }
-static uint32_t count=0;
 /* USER CODE BEGIN  0 */
 void robot_init_entry(ULONG input)
 {
-
+  DWT_Init(168);
   shell_init();
+  LOG_INIT();
 
   while (1)
   {
-      count++;
-      osal_delay_ms(1000);
+    LOG_INFO("robot init");
+    LOG_DEBUG("robot debug");
+    LOG_VERBOSE("robot verbose");
+    LOG_WARN("robot warn");
+    LOG_ERROR("robot error");
+    LOG_FATAL("robot fatal");
+    osal_delay_ms(1000);
   }
 }
 

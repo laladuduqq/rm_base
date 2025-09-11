@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-10 09:54:06
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-10 13:35:27
+ * @LastEditTime: 2025-09-11 09:22:11
  * @FilePath: /rm_base/CONFIG/tools_config.h
  * @Description: 
  */
@@ -22,5 +22,18 @@
 #define SHELL_THREAD_STACK_SIZE      1024                                 // shell线程栈大小
 #define SHELL_THREAD_PRIORITY        30                                   // shell线程优先级
 #define SHELL_THREAD_STACK_SECTION  __attribute__((section(".ccmram")))   //shell线程栈内存区域
+
+/* log 配置 */
+// 默认输出方式
+#define LOG_ENABLED                  1                                    // 启用日志功能
+#define LOG_OUTPUT_LEVEL             LOG_LEVEL_VERBOSE                    // 日志的输出等级
+#define LOG_COLOR_ENABLE             1                                    // 启用彩色输出
+#define LOG_TIMSTAMP_ENABLE          1                                    //启用时间戳 
+#if SHELL_ENABLE                                                          // 当shell_enable时默认使用shell输出
+#define LOG_OUTPUT_SHELL
+#else
+#define LOG_RTT                      1                                    //是否使用rtt输出，0为使用uart输出          
+#define LOG_COM                      huart6                               // 使用的串口
+#endif
 
 #endif // _TOOLS_CONFIG_H_

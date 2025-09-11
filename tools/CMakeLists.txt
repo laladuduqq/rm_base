@@ -9,6 +9,7 @@ add_library(${name} STATIC
     RTT/SEGGER_RTT_ASM_ARMv7M.S
     SHELL/shell.c
     SHELL/shell_ps.c
+    LOG/log.c
 )
 
 # 设置包含目录
@@ -16,6 +17,7 @@ target_include_directories(${name}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/RTT
     ${CMAKE_CURRENT_SOURCE_DIR}/SHELL
+    ${CMAKE_CURRENT_SOURCE_DIR}/LOG
 )
 
 # 链接必要的库

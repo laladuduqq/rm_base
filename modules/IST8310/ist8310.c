@@ -2,11 +2,14 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 11:11:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 13:07:30
+ * @LastEditTime: 2025-09-11 15:55:08
  * @FilePath: /rm_base/modules/IST8310/ist8310.c
  * @Description: 
  */
 #include "ist8310.h"
+
+#if IST8310_ENABLE
+
 #include "bsp_dwt.h"
 #include "bsp_i2c.h"
 #include "osal_def.h"
@@ -96,3 +99,12 @@ osal_status_t IST8310_ReadData(IST8310_Instance_t *ist)
     }
     return status;
 }
+
+#else 
+IST8310_Instance_t *IST8310_Init(){
+    return NULL;
+}
+osal_status_t IST8310_ReadData(IST8310_Instance_t *ist){
+    return OSAL_SUCCESS;
+}
+#endif

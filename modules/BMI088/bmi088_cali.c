@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 15:04:31
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 15:27:33
+ * @LastEditTime: 2025-09-11 15:54:54
  * @FilePath: /rm_base/modules/BMI088/bmi088_cali.c
  * @Description: 
  */
@@ -15,6 +15,10 @@
 
 #define log_tag "BMI088"
 #include "log.h"
+
+#include "modules_config.h"
+
+#if BMI088_ENABLE
 
 #define GxOFFSET -0.00601393497f
 #define GyOFFSET -0.00196841615f
@@ -121,3 +125,10 @@ osal_status_t Calibrate_BMI088_Offset(BMI088_Instance_t *ist)
     LOG_INFO("calibrate BMI088 offset finished!");
     return status;
 }
+
+#else  
+osal_status_t Calibrate_BMI088_Offset(BMI088_Instance_t *ist)
+{
+    return OSAL_SUCCESS;
+}
+#endif 

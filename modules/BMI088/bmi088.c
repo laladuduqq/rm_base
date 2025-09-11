@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 13:43:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 15:26:31
+ * @LastEditTime: 2025-09-11 15:54:59
  * @FilePath: /rm_base/modules/BMI088/bmi088.c
  * @Description: 
  */
@@ -13,9 +13,12 @@
 #include "osal_def.h"
 #include <stdint.h>
 #include <string.h>
+#include "modules_config.h"
 
 #define log_tag "BMI088"
 #include "log.h"
+
+#if BMI088_ENABLE
 
 // 常量定义
 static BMI088_Instance_t bmi088_instance={0};
@@ -227,4 +230,18 @@ BMI088_Instance_t* BMI088_init(void){
         return NULL;
     }
 }
-
+#else  
+BMI088_Instance_t* BMI088_init(void)
+{ 
+    return NULL;
+}
+osal_status_t bmi088_get_accel(BMI088_Instance_t *ist){
+    return OSAL_SUCCESS;
+}
+osal_status_t bmi088_get_gyro(BMI088_Instance_t *ist){
+    return OSAL_SUCCESS; 
+}
+osal_status_t bmi088_get_temp(BMI088_Instance_t *ist){
+    return OSAL_SUCCESS;
+}
+#endif

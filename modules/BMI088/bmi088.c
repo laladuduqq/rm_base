@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 13:43:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 15:54:59
+ * @LastEditTime: 2025-09-11 18:34:19
  * @FilePath: /rm_base/modules/BMI088/bmi088.c
  * @Description: 
  */
@@ -10,6 +10,8 @@
 #include "BMI088_reg.h"
 #include "bsp_dwt.h"
 #include "bsp_flash.h"
+#include "bsp_pwm.h"
+#include "controller.h"
 #include "osal_def.h"
 #include <stdint.h>
 #include <string.h>
@@ -189,6 +191,23 @@ osal_status_t bmi088_get_gyro(BMI088_Instance_t *ist)
     return status;
 }
 
+void bmi088_temp_ctrl(void) {
+    #if BMI088_TEMP_ENABLE
+    PIDCalculate(&bmi088_instance.pid_temp, bmi088_instance.BMI088_Raw_Data.temperature, BMI088_TEMP_SET);
+    // 使用BSP_PWM设置占空比
+    if (bmi088_instance.bmi088_pwm) {
+        // 将PID输出限制在0-1000范围内
+        float duty_cycle = bmi088_instance.pid_temp.Output;
+        if (duty_cycle < 0) {
+            duty_cycle = 0;
+        } else if (duty_cycle > 1000) {
+            duty_cycle = 1000;
+        }
+        BSP_PWM_Set_Duty_Cycle(bmi088_instance.bmi088_pwm, (uint16_t)duty_cycle);
+    }
+    #endif
+}
+
 BMI088_Instance_t* BMI088_init(void){
     static SPI_Device_Init_Config gyro_cfg = {
         .hspi       = &hspi1,
@@ -206,12 +225,33 @@ BMI088_Instance_t* BMI088_init(void){
         .rx_mode    = SPI_MODE_BLOCKING,
       };
     bmi088_instance.acc_device = BSP_SPI_Device_Init(&acc_cfg);
-    if (!bmi088_instance.acc_device || !bmi088_instance.gyro_device){
+    static PWM_Init_Config config = {
+        .channel = PWM_CHANNEL_1,
+        .duty_cycle_x10 = 0,
+        .frequency = 5000,
+        .htim = &htim10,
+        .mode = PWM_MODE_BLOCKING
+    };
+    bmi088_instance.bmi088_pwm = BSP_PWM_Device_Init(&config);
+    if (!bmi088_instance.acc_device || !bmi088_instance.gyro_device || !bmi088_instance.bmi088_pwm){
         LOG_ERROR("bmi088 init failed");
         return NULL;
     }else{
         bmi088_acc_init();
         bmi088_gyro_init();
+        PID_Init_Config_s config = {
+            .MaxOut = 1000,
+            .IntegralLimit = 20,
+            .DeadBand = 0,
+            .Kp = 20,
+            .Ki = 0,
+            .Kd = 0,
+            .Improve = 0x01
+        };
+        PIDInit(&bmi088_instance.pid_temp, &config);
+        #if BMI088_TEMP_ENABLE
+        BSP_PWM_Start(bmi088_instance.bmi088_pwm);
+        #endif
         static uint8_t tmpdata[sizeof(BMI088_Cali_Offset_t)+2] = {0};
         BSP_FLASH_Read_Buffer(0x080E0000, tmpdata, sizeof(BMI088_Cali_Offset_t)+2);
         if (tmpdata[sizeof(BMI088_Cali_Offset_t)+1] != 0xAA)

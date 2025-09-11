@@ -7,6 +7,12 @@ add_library(${name} STATIC
     IST8310/ist8310.c
     BMI088/bmi088.c
     BMI088/bmi088_cali.c
+    algorithm/compensation.c
+    algorithm/controller.c
+    algorithm/kalman_filter.c
+    algorithm/LQR.c
+    algorithm/QuaternionEKF.c
+    algorithm/user_lib.c
 )
 
 # 设置包含目录
@@ -15,6 +21,7 @@ target_include_directories(${name}
     ${CMAKE_CURRENT_SOURCE_DIR}/RGB
     ${CMAKE_CURRENT_SOURCE_DIR}/IST8310
     ${CMAKE_CURRENT_SOURCE_DIR}/BMI088
+    ${CMAKE_CURRENT_SOURCE_DIR}/algorithm
 )
 
 # 链接必要的库

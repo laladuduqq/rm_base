@@ -6,6 +6,7 @@ add_library(${name} STATIC
     RGB/rgb.c
     IST8310/ist8310.c
     BMI088/bmi088.c
+    BMI088/bmi088_cali.c
 )
 
 # 设置包含目录
@@ -18,6 +19,8 @@ target_include_directories(${name}
 
 # 链接必要的库
 target_link_libraries(${name} stm32cubemx OSAL BSP CONFIG TOOLS)
+target_link_libraries(MODULES -l:libarm_cortexM4lf_math.a) #链接dsp
+target_link_libraries(MODULES m) #链接数学库
 
 # 添加到主项目
 target_link_libraries(${PROJECT_NAME} ${name})

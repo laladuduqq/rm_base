@@ -2,14 +2,16 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 13:43:09
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 14:48:42
+ * @LastEditTime: 2025-09-11 15:26:31
  * @FilePath: /rm_base/modules/BMI088/bmi088.c
  * @Description: 
  */
 #include "bmi088.h"
 #include "BMI088_reg.h"
 #include "bsp_dwt.h"
+#include "bsp_flash.h"
 #include "osal_def.h"
+#include <stdint.h>
 #include <string.h>
 
 #define log_tag "BMI088"
@@ -207,6 +209,16 @@ BMI088_Instance_t* BMI088_init(void){
     }else{
         bmi088_acc_init();
         bmi088_gyro_init();
+        static uint8_t tmpdata[sizeof(BMI088_Cali_Offset_t)+2] = {0};
+        BSP_FLASH_Read_Buffer(0x080E0000, tmpdata, sizeof(BMI088_Cali_Offset_t)+2);
+        if (tmpdata[sizeof(BMI088_Cali_Offset_t)+1] != 0xAA)
+        {
+            Calibrate_BMI088_Offset(&bmi088_instance);
+        }
+        else 
+        {
+            memcpy(&bmi088_instance.BMI088_Cali_Offset, tmpdata, sizeof(BMI088_Cali_Offset_t));
+        }
         if (bmi088_instance.BMI088_ERORR_CODE == BMI088_NO_ERROR)
         {
             LOG_INFO("bmi088 init success");

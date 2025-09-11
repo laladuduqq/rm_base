@@ -22,6 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "app_azure_rtos.h"
+#include "bmi088.h"
 #include "bsp_dwt.h"
 #include "ist8310.h"
 #include "osal_def.h"
@@ -113,6 +114,7 @@ VOID tx_application_define(VOID *first_unused_memory)
 }
 /* USER CODE BEGIN  0 */
 static IST8310_Instance_t *ist;
+static BMI088_Instance_t *bmi;
 void robot_init_entry(ULONG input)
 {
   DWT_Init(168);
@@ -120,10 +122,9 @@ void robot_init_entry(ULONG input)
   LOG_INIT();
   RGB_init();
   ist = IST8310_Init();
-
+  bmi = BMI088_init();
   while (1)
   {
-    IST8310_ReadData(ist);
     osal_delay_ms(5);
   }
 }

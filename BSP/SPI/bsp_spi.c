@@ -1,7 +1,11 @@
 #include "bsp_spi.h"
 #include "gpio.h"
+#include "osal_def.h"
 #include "string.h"
 #include <stdio.h>
+
+#define log_tag "BSP_SPI"
+#include "log.h"
 
 // SPI总线管理器数组
 static SPI_Bus_Manager spi_buses[SPI_BUS_NUM];
@@ -14,17 +18,20 @@ static void BSP_SPI_Deselect_Device(SPI_Device* dev);
 SPI_Device* BSP_SPI_Device_Init(SPI_Device_Init_Config* config)
 {
     if (config == NULL || config->hspi == NULL) {
+        LOG_ERROR("Invalid config or hspi is NULL");
         return NULL;
     }
 
     // 获取对应的总线管理器
     SPI_Bus_Manager* bus_manager = BSP_SPI_Get_Bus_Manager(config->hspi);
     if (bus_manager == NULL) {
+        LOG_ERROR("Failed to get bus manager for hspi=%p", (void*)config->hspi);
         return NULL;
     }
 
     // 检查设备数量是否已达上限
     if (bus_manager->device_count >= MAX_DEVICES_PER_BUS) {
+        LOG_ERROR("Device count reached maximum limit: %d", MAX_DEVICES_PER_BUS);
         return NULL;
     }
 
@@ -34,16 +41,18 @@ SPI_Device* BSP_SPI_Device_Init(SPI_Device_Init_Config* config)
         bus_manager->device_count = 0;
         
         // 创建总线事件和互斥锁
-        char event_name[32];
-        char mutex_name[32];
+        static char event_name[32];
+        static char mutex_name[32];
         snprintf(event_name, sizeof(event_name), "spi_event_%p", (void*)config->hspi);
         snprintf(mutex_name, sizeof(mutex_name), "spi_mutex_%p", (void*)config->hspi);
         
         if (osal_event_create(&bus_manager->bus_event, event_name) != OSAL_SUCCESS) {
+            LOG_ERROR("Failed to create bus event");
             return NULL;
         }
         
         if (osal_mutex_create(&bus_manager->bus_mutex, mutex_name) != OSAL_SUCCESS) {
+            LOG_ERROR("Failed to create bus mutex");
             osal_event_delete(&bus_manager->bus_event);
             return NULL;
         }
@@ -61,6 +70,8 @@ SPI_Device* BSP_SPI_Device_Init(SPI_Device_Init_Config* config)
     BSP_SPI_Deselect_Device(dev);
     
     bus_manager->device_count++;
+
+     LOG_INFO("SPI %p device initialized successfully. Device count: %d", (void *)dev->hspi,bus_manager->device_count);
     
     return dev;
 }
@@ -73,6 +84,7 @@ void BSP_SPI_Device_DeInit(SPI_Device* dev)
 
     SPI_Bus_Manager* bus_manager = BSP_SPI_Get_Bus_Manager(dev->hspi);
     if (bus_manager == NULL) {
+        LOG_ERROR("Failed to get bus manager for device hspi=%p", (void*)dev->hspi);
         return;
     }
 
@@ -105,16 +117,20 @@ void BSP_SPI_Device_DeInit(SPI_Device* dev)
 osal_status_t BSP_SPI_TransReceive(SPI_Device* dev, const uint8_t* tx_data, uint8_t* rx_data, uint16_t size)
 {
     if (dev == NULL || tx_data == NULL || rx_data == NULL || size == 0) {
+        LOG_ERROR("Invalid parameters: dev=%p, tx_data=%p, rx_data=%p, size=%d", 
+                  (void*)dev, (void*)tx_data, (void*)rx_data, size);
         return OSAL_INVALID_PARAM;
     }
 
     SPI_Bus_Manager* bus_manager = BSP_SPI_Get_Bus_Manager(dev->hspi);
     if (bus_manager == NULL) {
+        LOG_ERROR("Failed to get bus manager for device hspi=%p", (void*)dev->hspi);
         return OSAL_ERROR;
     }
 
     // 等待获取总线使用权
     if (osal_mutex_lock(&bus_manager->bus_mutex, OSAL_WAIT_FOREVER) != OSAL_SUCCESS) {
+        LOG_ERROR("Failed to acquire bus mutex");
         return OSAL_ERROR;
     }
 
@@ -137,16 +153,13 @@ osal_status_t BSP_SPI_TransReceive(SPI_Device* dev, const uint8_t* tx_data, uint
             break;
             
         case SPI_MODE_IT:
-            // 清除事件标志
-            osal_event_clear(&bus_manager->bus_event, SPI_EVENT_TX_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT);
-            
             hal_status = HAL_SPI_TransmitReceive_IT(dev->hspi, (uint8_t*)tx_data, rx_data, size);
             if (hal_status == HAL_OK) {
                 // 等待传输完成或出错
                 unsigned int actual_flags;
                 osal_status_t wait_status = osal_event_wait(&bus_manager->bus_event, 
                                                             SPI_EVENT_TX_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT,
-                                                            OSAL_EVENT_WAIT_FLAG_OR,
+                                                            OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR,
                                                             OSAL_WAIT_FOREVER,
                                                             &actual_flags);
                 if (wait_status != OSAL_SUCCESS) {
@@ -160,16 +173,13 @@ osal_status_t BSP_SPI_TransReceive(SPI_Device* dev, const uint8_t* tx_data, uint
             break;
             
         case SPI_MODE_DMA:
-            // 清除事件标志
-            osal_event_clear(&bus_manager->bus_event, SPI_EVENT_TX_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT);
-            
             hal_status = HAL_SPI_TransmitReceive_DMA(dev->hspi, (uint8_t*)tx_data, rx_data, size);
             if (hal_status == HAL_OK) {
                 // 等待传输完成或出错
                 unsigned int actual_flags;
                 osal_status_t wait_status = osal_event_wait(&bus_manager->bus_event, 
                                                             SPI_EVENT_TX_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT,
-                                                            OSAL_EVENT_WAIT_FLAG_OR,
+                                                            OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR,
                                                             OSAL_WAIT_FOREVER,
                                                             &actual_flags);
                 if (wait_status != OSAL_SUCCESS) {
@@ -183,6 +193,7 @@ osal_status_t BSP_SPI_TransReceive(SPI_Device* dev, const uint8_t* tx_data, uint
             break;
             
         default:
+            LOG_ERROR("Invalid transmit mode: %d", dev->tx_mode);
             osal_status = OSAL_ERROR;
             break;
     }
@@ -199,16 +210,19 @@ osal_status_t BSP_SPI_TransReceive(SPI_Device* dev, const uint8_t* tx_data, uint
 osal_status_t BSP_SPI_Transmit(SPI_Device* dev, const uint8_t* tx_data, uint16_t size)
 {
     if (dev == NULL || tx_data == NULL || size == 0) {
+        LOG_ERROR("Invalid parameters: dev=%p, tx_data=%p, size=%d", (void*)dev, (void*)tx_data, size);
         return OSAL_INVALID_PARAM;
     }
 
     SPI_Bus_Manager* bus_manager = BSP_SPI_Get_Bus_Manager(dev->hspi);
     if (bus_manager == NULL) {
+        LOG_ERROR("Failed to get bus manager for device hspi=%p", (void*)dev->hspi);
         return OSAL_ERROR;
     }
 
     // 等待获取总线使用权
     if (osal_mutex_lock(&bus_manager->bus_mutex, OSAL_WAIT_FOREVER) != OSAL_SUCCESS) {
+        LOG_ERROR("Failed to acquire bus mutex");
         return OSAL_ERROR;
     }
 
@@ -231,16 +245,13 @@ osal_status_t BSP_SPI_Transmit(SPI_Device* dev, const uint8_t* tx_data, uint16_t
             break;
             
         case SPI_MODE_IT:
-            // 清除事件标志
-            osal_event_clear(&bus_manager->bus_event, SPI_EVENT_TX_DONE_EVENT | SPI_EVENT_ERR_EVENT);
-            
             hal_status = HAL_SPI_Transmit_IT(dev->hspi, (uint8_t*)tx_data, size);
             if (hal_status == HAL_OK) {
                 // 等待传输完成或出错
                 unsigned int actual_flags;
                 osal_status_t wait_status = osal_event_wait(&bus_manager->bus_event, 
                                                             SPI_EVENT_TX_DONE_EVENT | SPI_EVENT_ERR_EVENT,
-                                                            OSAL_EVENT_WAIT_FLAG_OR,
+                                                            OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR,
                                                             OSAL_WAIT_FOREVER,
                                                             &actual_flags);
                 if (wait_status != OSAL_SUCCESS) {
@@ -254,16 +265,13 @@ osal_status_t BSP_SPI_Transmit(SPI_Device* dev, const uint8_t* tx_data, uint16_t
             break;
             
         case SPI_MODE_DMA:
-            // 清除事件标志
-            osal_event_clear(&bus_manager->bus_event, SPI_EVENT_TX_DONE_EVENT | SPI_EVENT_ERR_EVENT);
-            
             hal_status = HAL_SPI_Transmit_DMA(dev->hspi, (uint8_t*)tx_data, size);
             if (hal_status == HAL_OK) {
                 // 等待传输完成或出错
                 unsigned int actual_flags;
                 osal_status_t wait_status = osal_event_wait(&bus_manager->bus_event, 
                                                             SPI_EVENT_TX_DONE_EVENT | SPI_EVENT_ERR_EVENT,
-                                                            OSAL_EVENT_WAIT_FLAG_OR,
+                                                            OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR,
                                                             OSAL_WAIT_FOREVER,
                                                             &actual_flags);
                 if (wait_status != OSAL_SUCCESS) {
@@ -277,6 +285,7 @@ osal_status_t BSP_SPI_Transmit(SPI_Device* dev, const uint8_t* tx_data, uint16_t
             break;
             
         default:
+            LOG_ERROR("Invalid transmit mode: %d", dev->tx_mode);
             osal_status = OSAL_ERROR;
             break;
     }
@@ -294,16 +303,19 @@ osal_status_t BSP_SPI_Transmit(SPI_Device* dev, const uint8_t* tx_data, uint16_t
 osal_status_t BSP_SPI_Receive(SPI_Device* dev, uint8_t* rx_data, uint16_t size)
 {
     if (dev == NULL || rx_data == NULL || size == 0) {
+        LOG_ERROR("Invalid parameters: dev=%p, rx_data=%p, size=%d", (void*)dev, (void*)rx_data, size);
         return OSAL_INVALID_PARAM;
     }
 
     SPI_Bus_Manager* bus_manager = BSP_SPI_Get_Bus_Manager(dev->hspi);
     if (bus_manager == NULL) {
+        LOG_ERROR("Failed to get bus manager for device hspi=%p", (void*)dev->hspi);
         return OSAL_ERROR;
     }
 
     // 等待获取总线使用权
     if (osal_mutex_lock(&bus_manager->bus_mutex, OSAL_WAIT_FOREVER) != OSAL_SUCCESS) {
+        LOG_ERROR("Failed to acquire bus mutex");
         return OSAL_ERROR;
     }
 
@@ -326,16 +338,13 @@ osal_status_t BSP_SPI_Receive(SPI_Device* dev, uint8_t* rx_data, uint16_t size)
             break;
             
         case SPI_MODE_IT:
-            // 清除事件标志
-            osal_event_clear(&bus_manager->bus_event, SPI_EVENT_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT);
-            
             hal_status = HAL_SPI_Receive_IT(dev->hspi, rx_data, size);
             if (hal_status == HAL_OK) {
                 // 等待传输完成或出错
                 unsigned int actual_flags;
                 osal_status_t wait_status = osal_event_wait(&bus_manager->bus_event, 
                                                             SPI_EVENT_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT,
-                                                            OSAL_EVENT_WAIT_FLAG_OR,
+                                                            OSAL_EVENT_WAIT_FLAG_OR| OSAL_EVENT_WAIT_FLAG_CLEAR,
                                                             OSAL_WAIT_FOREVER,
                                                             &actual_flags);
                 if (wait_status != OSAL_SUCCESS) {
@@ -349,16 +358,13 @@ osal_status_t BSP_SPI_Receive(SPI_Device* dev, uint8_t* rx_data, uint16_t size)
             break;
             
         case SPI_MODE_DMA:
-            // 清除事件标志
-            osal_event_clear(&bus_manager->bus_event, SPI_EVENT_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT);
-            
             hal_status = HAL_SPI_Receive_DMA(dev->hspi, rx_data, size);
             if (hal_status == HAL_OK) {
                 // 等待传输完成或出错
                 unsigned int actual_flags;
                 osal_status_t wait_status = osal_event_wait(&bus_manager->bus_event, 
                                                             SPI_EVENT_RX_DONE_EVENT | SPI_EVENT_ERR_EVENT,
-                                                            OSAL_EVENT_WAIT_FLAG_OR,
+                                                            OSAL_EVENT_WAIT_FLAG_OR | OSAL_EVENT_WAIT_FLAG_CLEAR,
                                                             OSAL_WAIT_FOREVER,
                                                             &actual_flags);
                 if (wait_status != OSAL_SUCCESS) {
@@ -372,6 +378,7 @@ osal_status_t BSP_SPI_Receive(SPI_Device* dev, uint8_t* rx_data, uint16_t size)
             break;
             
         default:
+            LOG_ERROR("Invalid receive mode: %d", dev->rx_mode);
             osal_status = OSAL_ERROR;
             break;
     }
@@ -390,16 +397,20 @@ osal_status_t BSP_SPI_TransAndTrans(SPI_Device* dev, const uint8_t* tx_data1, ui
                                    const uint8_t* tx_data2, uint16_t size2)
 {
     if (dev == NULL || tx_data1 == NULL || tx_data2 == NULL || (size1 == 0 && size2 == 0)) {
+        LOG_ERROR("Invalid parameters: dev=%p, tx_data1=%p, tx_data2=%p, size1=%d, size2=%d", 
+                  (void*)dev, (void*)tx_data1, (void*)tx_data2, size1, size2);
         return OSAL_INVALID_PARAM;
     }
 
     SPI_Bus_Manager* bus_manager = BSP_SPI_Get_Bus_Manager(dev->hspi);
     if (bus_manager == NULL) {
+        LOG_ERROR("Failed to get bus manager for device hspi=%p", (void*)dev->hspi);
         return OSAL_ERROR;
     }
 
     // 等待获取总线使用权
     if (osal_mutex_lock(&bus_manager->bus_mutex, OSAL_WAIT_FOREVER) != OSAL_SUCCESS) {
+        LOG_ERROR("Failed to acquire bus mutex");
         return OSAL_ERROR;
     }
 
@@ -443,6 +454,7 @@ osal_status_t BSP_SPI_TransAndTrans(SPI_Device* dev, const uint8_t* tx_data1, ui
 static SPI_Bus_Manager* BSP_SPI_Get_Bus_Manager(SPI_HandleTypeDef* hspi)
 {
     if (hspi == NULL) {
+        LOG_ERROR("NULL hspi parameter");
         return NULL;
     }
 

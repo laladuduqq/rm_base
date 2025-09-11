@@ -4,12 +4,14 @@ set(name MODULES)
 
 add_library(${name} STATIC
     RGB/rgb.c
+    IST8310/ist8310.c
 )
 
 # 设置包含目录
 target_include_directories(${name}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/RGB
+    ${CMAKE_CURRENT_SOURCE_DIR}/IST8310
 )
 
 # 链接必要的库

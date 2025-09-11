@@ -23,6 +23,7 @@
 
 #include "app_azure_rtos.h"
 #include "bsp_dwt.h"
+#include "ist8310.h"
 #include "osal_def.h"
 #include "shell.h"
 #include <stdint.h>
@@ -111,25 +112,19 @@ VOID tx_application_define(VOID *first_unused_memory)
 
 }
 /* USER CODE BEGIN  0 */
+static IST8310_Instance_t *ist;
 void robot_init_entry(ULONG input)
 {
   DWT_Init(168);
   shell_init();
   LOG_INIT();
   RGB_init();
+  ist = IST8310_Init();
 
   while (1)
   {
-    RGB_show(LED_Green);
-    osal_delay_ms(1000);
-    RGB_show(LED_Red);
-    osal_delay_ms(1000);
-    RGB_show(LED_Yellow);
-    osal_delay_ms(1000);
-    RGB_show(LED_Blue);
-    osal_delay_ms(1000);
-    RGB_show(LED_White);
-    osal_delay_ms(1000);
+    IST8310_ReadData(ist);
+    osal_delay_ms(5);
   }
 }
 

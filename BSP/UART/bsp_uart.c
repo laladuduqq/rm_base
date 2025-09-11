@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-07 12:41:40
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-10 21:32:31
+ * @LastEditTime: 2025-09-11 10:18:57
  * @FilePath: /rm_base/BSP/UART/bsp_uart.c
  * @Description: 
  */
@@ -12,6 +12,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+#define log_tag "BSP_UART"
+#include "log.h"
 
 static UART_Device registered_uart[UART_MAX_INSTANCE_NUM] = {0}; // 结构体数组
 static bool uart_used[UART_MAX_INSTANCE_NUM] = {false};         // 添加使用状态标记
@@ -63,6 +66,7 @@ UART_Device* BSP_UART_Device_Init(UART_Device_init_config *config){
     for(int i=0; i<UART_MAX_INSTANCE_NUM; i++){
         if(uart_used[i] && registered_uart[i].huart == config->huart)
         {   
+            LOG_ERROR("UART instance already exists, huart=%p", config->huart);
             return NULL;
         }
     }
@@ -75,6 +79,7 @@ UART_Device* BSP_UART_Device_Init(UART_Device_init_config *config){
         }
     }
     if(free_index == -1) {
+        LOG_ERROR("No free UART instance slots available");
         return NULL;
     }
     // 初始化参数
@@ -87,6 +92,7 @@ UART_Device* BSP_UART_Device_Init(UART_Device_init_config *config){
         device->rx_buf_size = config->rx_buf_size;
     } 
     else{
+        LOG_ERROR("RX buffer is NULL");
         return NULL;
     }
     // 配置接收长度
@@ -100,10 +106,15 @@ UART_Device* BSP_UART_Device_Init(UART_Device_init_config *config){
     snprintf(event_name, sizeof(event_name), "uart_event_%d",free_index);
     // 创建事件组
     osal_status_t status = osal_event_create(&device->uart_event, event_name);
-    if (status != OSAL_SUCCESS) {return NULL;}
+    if (status != OSAL_SUCCESS) {
+        LOG_ERROR("Failed to create UART event, status=%d", status);
+        return NULL;
+    }
     // 增加使用计数
     uart_used[free_index] = true;
     Start_Rx(device);
+    LOG_INFO("UART device initialized successfully, huart=%p, rx_mode=%d, tx_mode=%d", 
+             device->huart, device->rx_mode, device->tx_mode);
     return device;
 }
 int BSP_UART_Send(UART_Device *device, uint8_t *data, uint16_t len)
@@ -127,6 +138,7 @@ int BSP_UART_Send(UART_Device *device, uint8_t *data, uint16_t len)
             break;
 
         default:
+            LOG_ERROR("Invalid TX mode: %d", device->tx_mode);
             return -1;
     }
 
@@ -144,6 +156,7 @@ int BSP_UART_Send(UART_Device *device, uint8_t *data, uint16_t len)
 uint8_t* BSP_UART_Read(UART_Device *device)
 {
     if (device == NULL) {
+        LOG_ERROR("Invalid device for UART read");
         return NULL;
     }
     
@@ -170,6 +183,7 @@ uint8_t* BSP_UART_Read(UART_Device *device)
 }
 void BSP_UART_Deinit(UART_Device *device) {
     if (device == NULL) {
+        LOG_ERROR("Invalid device for UART deinit");
         return;
     }
     
@@ -179,6 +193,7 @@ void BSP_UART_Deinit(UART_Device *device) {
             osal_event_delete(&device->uart_event);
             memset(device, 0, sizeof(UART_Device));
             uart_used[i] = false;
+            LOG_INFO("UART device deinitialized successfully, huart=%p", device->huart);
             break;
         }
     }

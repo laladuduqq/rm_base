@@ -30,7 +30,7 @@ target_include_directories(${name}
 )
 
 # 链接必要的库
-target_link_libraries(${name} stm32cubemx OSAL)
+target_link_libraries(${name} stm32cubemx OSAL TOOLS)
 
 # 添加到主项目
 target_link_libraries(${PROJECT_NAME} ${name})

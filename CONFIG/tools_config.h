@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-10 09:54:06
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 09:22:11
+ * @LastEditTime: 2025-09-11 10:20:53
  * @FilePath: /rm_base/CONFIG/tools_config.h
  * @Description: 
  */
@@ -26,7 +26,7 @@
 /* log 配置 */
 // 默认输出方式
 #define LOG_ENABLED                  1                                    // 启用日志功能
-#define LOG_OUTPUT_LEVEL             LOG_LEVEL_VERBOSE                    // 日志的输出等级
+#define LOG_OUTPUT_LEVEL             LOG_LEVEL_INFO                       // 日志的输出等级
 #define LOG_COLOR_ENABLE             1                                    // 启用彩色输出
 #define LOG_TIMSTAMP_ENABLE          1                                    //启用时间戳 
 #if SHELL_ENABLE                                                          // 当shell_enable时默认使用shell输出

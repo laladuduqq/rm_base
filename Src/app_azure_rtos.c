@@ -118,12 +118,6 @@ void robot_init_entry(ULONG input)
 
   while (1)
   {
-    LOG_INFO("robot init");
-    LOG_DEBUG("robot debug");
-    LOG_VERBOSE("robot verbose");
-    LOG_WARN("robot warn");
-    LOG_ERROR("robot error");
-    LOG_FATAL("robot fatal");
     osal_delay_ms(1000);
   }
 }

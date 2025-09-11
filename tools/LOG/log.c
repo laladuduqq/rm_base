@@ -2,7 +2,7 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 08:34:41
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-11 09:09:16
+ * @LastEditTime: 2025-09-11 10:13:23
  * @FilePath: /rm_base/tools/LOG/log.c
  * @Description: 
  */
@@ -18,9 +18,11 @@
 // 默认日志级别
 static int g_log_level = LOG_OUTPUT_LEVEL;
 
-// 多线程保护的互斥锁
-static osal_mutex_t log_mutex;
-static int mutex_initialized = 0;
+// 多线程保护的信号量
+static osal_sem_t log_sem;
+static int log_initialized = 0;
+// 防止递归调用的标志
+static int in_log_output = 0;
 
 #if !SHELL_ENABLE 
     #if LOG_RTT
@@ -68,10 +70,10 @@ static char* get_dwt_timestamp(void) {
 
 void log_init(void)
 {
-    if (!mutex_initialized) {
-        osal_status_t status = osal_mutex_create(&log_mutex, "log_mutex");
+    if (!log_initialized) {
+        osal_status_t status = osal_sem_create(&log_sem, "log_sem", 1);
         if (status == OSAL_SUCCESS) {
-            mutex_initialized = 1;
+            log_initialized = 1;
         }
     }
     
@@ -101,32 +103,45 @@ void log_set_level(int level)
 
 static void lock_log(void)
 {
-    if (mutex_initialized) {
-        osal_mutex_lock(&log_mutex, OSAL_WAIT_FOREVER);
+    if (log_initialized) {
+        osal_sem_wait(&log_sem, OSAL_WAIT_FOREVER);
     }
 }
 
 static void unlock_log(void)
 {
-    if (mutex_initialized) {
-        osal_mutex_unlock(&log_mutex);
+    if (log_initialized) {
+        osal_sem_post(&log_sem);
     }
 }
 
 static void log_output(const char* str, size_t len)
 {
-#if SHELL_ENABLE
+if (log_initialized)
+{
+    // 检查是否正在递归调用
+    if (in_log_output) {
+        // 避免递归调用导致的死锁
+        return;
+    }
+    
+    // 设置标志，表示正在进行日志输出
+    in_log_output = 1;
+    #if SHELL_ENABLE
     // 使用shell输出
     shell_send((const uint8_t*)str, (uint16_t)len);
-#elif LOG_RTT
-    // 使用RTT输出
-    SEGGER_RTT_Write(0, str, len);
-#else
-    // 使用UART输出
-    if (log_uart_dev) {
-        BSP_UART_Send(log_uart_dev, (uint8_t*)str, (uint16_t)len);
-    }
-#endif
+    #elif LOG_RTT
+        // 使用RTT输出
+        SEGGER_RTT_Write(0, str, len);
+    #else
+        // 使用UART输出
+        if (log_uart_dev) {
+            BSP_UART_Send(log_uart_dev, (uint8_t*)str, (uint16_t)len);
+        }
+    #endif
+    // 清除标志
+    in_log_output = 0;
+}
 }
 
 void log_write(int level, const char* tag, const char* format, ...)

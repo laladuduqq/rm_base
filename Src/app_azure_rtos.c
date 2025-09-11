@@ -32,6 +32,7 @@
 /* USER CODE BEGIN Includes */
 #define LOG_TAG "app"
 #include "log.h"
+#include "rgb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -115,9 +116,19 @@ void robot_init_entry(ULONG input)
   DWT_Init(168);
   shell_init();
   LOG_INIT();
+  RGB_init();
 
   while (1)
   {
+    RGB_show(LED_Green);
+    osal_delay_ms(1000);
+    RGB_show(LED_Red);
+    osal_delay_ms(1000);
+    RGB_show(LED_Yellow);
+    osal_delay_ms(1000);
+    RGB_show(LED_Blue);
+    osal_delay_ms(1000);
+    RGB_show(LED_White);
     osal_delay_ms(1000);
   }
 }

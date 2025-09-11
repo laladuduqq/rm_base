@@ -2,11 +2,15 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-08 08:31:35
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-08 10:10:35
+ * @LastEditTime: 2025-09-11 10:42:05
  * @FilePath: /rm_base/BSP/PWM/bsp_pwm.c
  * @Description: 
  */
 #include "bsp_pwm.h"
+
+// 添加日志支持
+#define log_tag "PWM"
+#include "log.h"
 
 static PWM_Device pwm_devices[MAX_PWM_DEVICES];
 static uint8_t device_count = 0;
@@ -17,15 +21,18 @@ static uint32_t BSP_PWM_Get_Timer_Clock(TIM_HandleTypeDef* htim);
 PWM_Device* BSP_PWM_Device_Init(PWM_Init_Config* config)
 {
     if (config == NULL || config->htim == NULL) {
+        LOG_ERROR("Invalid config or timer handle");
         return NULL;
     }
 
     // 检查占空比参数有效性 (0-1000表示0.0%-100.0%)
     if (config->duty_cycle_x10 > 1000) {
+        LOG_ERROR("Invalid duty cycle: %d", config->duty_cycle_x10);
         return NULL;
     }
 
     if (device_count >= MAX_PWM_DEVICES) {
+        LOG_ERROR("Max PWM devices reached: %d", MAX_PWM_DEVICES);
         return NULL;
     }
     
@@ -38,16 +45,20 @@ PWM_Device* BSP_PWM_Device_Init(PWM_Init_Config* config)
     
     // 设置频率和计算周期
     if (BSP_PWM_Set_Frequency(dev, config->frequency) != OSAL_SUCCESS) {
+        LOG_ERROR("Failed to set frequency for device");
         device_count--;
         return NULL;
     }
-    
+    LOG_INFO("PWM device initialized: TIM %p, Channel %d, Freq %lu Hz, Duty %u.%u%%", 
+             (void*)dev->htim, dev->channel, dev->frequency, 
+             dev->duty_cycle_x10/10, dev->duty_cycle_x10%10);
     return dev;
 }
 
 void BSP_PWM_Device_DeInit(PWM_Device* dev)
 {
     if (dev == NULL) {
+        LOG_ERROR("Trying to deinit NULL device");
         return;
     }
     
@@ -56,11 +67,14 @@ void BSP_PWM_Device_DeInit(PWM_Device* dev)
     
     // 清空设备结构体
     memset(dev, 0, sizeof(PWM_Device));
+    
+    LOG_INFO("PWM device deinitialized");
 }
 
 osal_status_t BSP_PWM_Start(PWM_Device* dev)
 {
     if (dev == NULL || dev->htim == NULL) {
+        LOG_ERROR("Invalid device or timer handle");
         return OSAL_INVALID_PARAM;
     }
     
@@ -81,24 +95,22 @@ osal_status_t BSP_PWM_Start(PWM_Device* dev)
             break;
             
         default:
+            LOG_ERROR("Invalid PWM mode: %d", dev->mode);
             return OSAL_ERROR;
     }
     
     if (hal_status != HAL_OK) {
+        LOG_ERROR("Failed to start PWM: HAL status %d", hal_status);
         return OSAL_ERROR;
     }
     
     return OSAL_SUCCESS;
 }
 
-/**
- * @description: 停止PWM输出
- * @param {PWM_Device*} dev - PWM设备指针
- * @return {osal_status_t} 操作状态
- */
 osal_status_t BSP_PWM_Stop(PWM_Device* dev)
 {
     if (dev == NULL || dev->htim == NULL) {
+        LOG_ERROR("Invalid device or timer handle");
         return OSAL_INVALID_PARAM;
     }
     
@@ -118,10 +130,12 @@ osal_status_t BSP_PWM_Stop(PWM_Device* dev)
             break;
             
         default:
+            LOG_ERROR("Invalid PWM mode: %d", dev->mode);
             return OSAL_ERROR;
     }
     
     if (hal_status != HAL_OK) {
+        LOG_ERROR("Failed to stop PWM: HAL status %d", hal_status);
         return OSAL_ERROR;
     }
     
@@ -132,6 +146,7 @@ osal_status_t BSP_PWM_Stop(PWM_Device* dev)
 osal_status_t BSP_PWM_Set_Duty_Cycle(PWM_Device* dev, uint16_t duty_cycle_x10)
 {
     if (dev == NULL || dev->htim == NULL || duty_cycle_x10 > 1000) {
+        LOG_ERROR("Invalid device, timer handle or duty cycle: %d", duty_cycle_x10);
         return OSAL_INVALID_PARAM;
     }
     
@@ -150,6 +165,7 @@ osal_status_t BSP_PWM_Set_Duty_Cycle(PWM_Device* dev, uint16_t duty_cycle_x10)
 osal_status_t BSP_PWM_Set_Frequency(PWM_Device* dev, uint32_t frequency)
 {
     if (dev == NULL || dev->htim == NULL || frequency == 0) {
+        LOG_ERROR("Invalid device, timer handle or frequency: %lu", frequency);
         return OSAL_INVALID_PARAM;
     }
     
@@ -184,6 +200,7 @@ osal_status_t BSP_PWM_Set_Frequency(PWM_Device* dev, uint32_t frequency)
     
     // 重新初始化定时器
     if (HAL_TIM_PWM_Init(dev->htim) != HAL_OK) {
+        LOG_ERROR("Failed to initialize timer for PWM");
         return OSAL_ERROR;
     }
     

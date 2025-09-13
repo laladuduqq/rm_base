@@ -2,13 +2,14 @@
  * @Author: laladuduqq 2807523947@qq.com
  * @Date: 2025-09-11 19:45:50
  * @LastEditors: laladuduqq 2807523947@qq.com
- * @LastEditTime: 2025-09-13 08:49:17
+ * @LastEditTime: 2025-09-13 10:08:13
  * @FilePath: /rm_base/modules/OFFLINE/offline.c
  * @Description: 
  */
 #include "offline.h"
 #include "beep.h"
 #include "bsp_dwt.h"
+#include "iwdg.h"
 #include "modules_config.h"
 #include "osal_def.h"
 #include "rgb.h"
@@ -31,6 +32,10 @@ static void shell_offline_cmd(int argc, char **argv);
 void offline_task(ULONG thread_input)
 {    
     (void)(thread_input);
+    #if OFFLINE_WATCHDOG_ENABLE
+        __HAL_DBGMCU_FREEZE_IWDG();
+        MX_IWDG_Init();
+    #endif
     for (;;)
     {
         static uint8_t highest_error_level = 0;
@@ -81,7 +86,10 @@ void offline_task(ULONG thread_input)
             current_beep_times = 0;
             RGB_show(LED_Green);              // 表示所有设备都在线
         }
-        
+        #if OFFLINE_WATCHDOG_ENABLE
+            HAL_IWDG_Refresh(&hiwdg);
+        #endif
+
         tx_thread_sleep(10);
     }
 }

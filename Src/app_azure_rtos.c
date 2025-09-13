@@ -22,19 +22,15 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "app_azure_rtos.h"
-#include "bmi088.h"
-#include "bsp_dwt.h"
-#include "ist8310.h"
-#include "osal_def.h"
-#include "shell.h"
-#include <stdint.h>
-#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #define LOG_TAG "app"
 #include "log.h"
-#include "rgb.h"
+#include "osal_def.h"
+#include <stdint.h>
+#include <string.h>
+#include "robot_init.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -113,20 +109,11 @@ VOID tx_application_define(VOID *first_unused_memory)
 
 }
 /* USER CODE BEGIN  0 */
-static IST8310_Instance_t *ist;
-static BMI088_Instance_t *bmi;
 void robot_init_entry(ULONG input)
 {
-  DWT_Init(168);
-  shell_init();
-  LOG_INIT();
-  RGB_init();
-  ist = IST8310_Init();
-  bmi = BMI088_init();
-  while (1)
-  {
-    osal_delay_ms(5);
-  }
+  robot_init();
+  LOG_INFO("robot init finish");
+  osal_thread_delete(&robot_init_thread);
 }
 
 /* USER CODE END  0 */

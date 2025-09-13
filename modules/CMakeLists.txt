@@ -14,6 +14,7 @@ add_library(${name} STATIC
     algorithm/QuaternionEKF.c
     algorithm/user_lib.c
     BEEP/beep.c
+    OFFLINE/offline.c
 )
 
 # 设置包含目录
@@ -24,6 +25,7 @@ target_include_directories(${name}
     ${CMAKE_CURRENT_SOURCE_DIR}/BMI088
     ${CMAKE_CURRENT_SOURCE_DIR}/algorithm
     ${CMAKE_CURRENT_SOURCE_DIR}/BEEP
+    ${CMAKE_CURRENT_SOURCE_DIR}/OFFLINE
 )
 
 # 链接必要的库
